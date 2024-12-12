@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -30,7 +30,8 @@
  *
  */
 function checkExtendedPDF(directUrl, key, url, token, callback) {
-    var limit = 110;
+    //110 is not enough for the new PDF form    
+    var limit = 300;
     if (directUrl) {
         downloadPartialy(directUrl, limit, null, function(text) {
             callback(isExtendedPDFFile(text))

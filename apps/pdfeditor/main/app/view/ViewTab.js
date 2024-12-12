@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -32,8 +32,7 @@
 /**
  *  ViewTab.js
  *
- *  Created by Julia Svinareva on 06.12.2021
- *  Copyright (c) 2021 Ascensio System SIA. All rights reserved.
+ *  Created on 06.12.2021
  *
  */
 
@@ -46,7 +45,7 @@ define([
 
     PDFE.Views.ViewTab = Common.UI.BaseView.extend(_.extend((function(){
         var template =
-        '<section class="panel" data-tab="view">' +
+        '<section class="panel" data-tab="view" role="tabpanel" aria-labelledby="view">' +
             '<div class="group" data-layout-name="toolbar-view-navigation">' +
                 '<span class="btn-slot text x-huge" id="slot-btn-navigation"></span>' +
             '</div>' +
@@ -86,6 +85,7 @@ define([
                     '<span class="btn-slot text" id="slot-chk-leftmenu"></span>' +
                 '</div>' +
                 '<div class="elset">' +
+                    '<span class="btn-slot text" id="slot-chk-rightmenu"></span>' +
                 '</div>' +
             '</div>' +
         '</section>';
@@ -118,13 +118,16 @@ define([
                 me.chLeftMenu.on('change', _.bind(function (checkbox, state) {
                     me.fireEvent('leftmenu:hide', [me.chLeftMenu, state === 'checked']);
                 }, me));
-                me.btnDarkDocument.on('click', _.bind(function () {
-                    me.fireEvent('darkmode:change');
+                me.btnDarkDocument.on('click', _.bind(function (e) {
+                    me.fireEvent('darkmode:change', [e.pressed]);
                 }, me));
                 me.cmbsZoom.forEach(function (cmb) {
                     cmb.on('combo:focusin', _.bind(me.onComboOpen, this, false));
                     cmb.on('show:after', _.bind(me.onComboOpen, this, true));
                 });
+                me.chRightMenu.on('change', _.bind(function (checkbox, state) {
+                    me.fireEvent('rightmenu:hide', [me.chRightMenu, state === 'checked']);
+                }, me));
             },
 
             initialize: function (options) {
@@ -185,7 +188,8 @@ define([
                     menu: true,
                     dataHint: '1',
                     dataHintDirection: 'bottom',
-                    dataHintOffset: 'small'
+                    dataHintOffset: 'small',
+                    action: 'interface-theme'
                 });
                 this.lockedControls.push(this.btnInterfaceTheme);
 
@@ -204,7 +208,7 @@ define([
                 this.chStatusbar = new Common.UI.CheckBox({
                     lock: [_set.lostConnect, _set.disableOnStart],
                     labelText: this.textStatusBar,
-                    value: !Common.localStorage.getBool("de-hidden-status"),
+                    value: !Common.localStorage.getBool("pdfe-hidden-status"),
                     dataHint: '1',
                     dataHintDirection: 'left',
                     dataHintOffset: 'small'
@@ -223,13 +227,22 @@ define([
 
                 this.chLeftMenu = new Common.UI.CheckBox({
                     lock: [_set.lostConnect, _set.disableOnStart],
-                    labelText: this.textLeftMenu,
+                    labelText: !Common.UI.isRTL() ? this.textLeftMenu : this.textRightMenu,
                     dataHint    : '1',
                     dataHintDirection: 'left',
                     dataHintOffset: 'small'
                 });
                 this.lockedControls.push(this.chLeftMenu);
 
+                this.chRightMenu = new Common.UI.CheckBox({
+                    lock: [_set.disableOnStart],
+                    labelText: !Common.UI.isRTL() ? this.textRightMenu : this.textLeftMenu,
+                    dataHint    : '1',
+                    dataHintDirection: 'left',
+                    dataHintOffset: 'small'
+                });
+                this.lockedControls.push(this.chRightMenu);
+                Common.UI.LayoutManager.addControls(this.lockedControls);
                 Common.Utils.lockControls(_set.disableOnStart, true, {array: this.lockedControls});
                 Common.NotificationCenter.on('app:ready', this.onAppReady.bind(this));
             },
@@ -280,6 +293,7 @@ define([
                 this.chStatusbar.render($host.find('#slot-chk-statusbar'));
                 this.chToolbar.render($host.find('#slot-chk-toolbar'));
                 this.chLeftMenu.render($host.find('#slot-chk-leftmenu'));
+                this.chRightMenu.render($host.find('#slot-chk-rightmenu'));
 
                 if (this.toolbar && this.toolbar.$el) {
                     this.btnsFitToPage = Common.Utils.injectButtons(this.toolbar.$el.find('.slot-btn-ftp'), 'tlbtn-btn-ftp-', 'toolbar__icon btn-ic-zoomtopage', this.textFitToPage,
@@ -294,7 +308,7 @@ define([
                 var created = this.btnsFitToPage.concat(this.btnsFitToWidth).concat(this.cmbsZoom);
                 Common.Utils.lockControls(Common.enumLock.disableOnStart, true, {array: created});
                 Array.prototype.push.apply(this.lockedControls, created);
-
+                Common.UI.LayoutManager.addControls(created);
                 return this.$el;
             },
 
@@ -312,7 +326,11 @@ define([
 
                 var value = Common.UI.LayoutManager.getInitValue('leftMenu');
                 value = (value!==undefined) ? !value : false;
-                this.chLeftMenu.setValue(!Common.localStorage.getBool("de-hidden-leftmenu", value));
+                this.chLeftMenu.setValue(!Common.localStorage.getBool("pdfe-hidden-leftmenu", value));
+
+                value = Common.UI.LayoutManager.getInitValue('rightMenu');
+                value = (value!==undefined) ? !value : false;
+                me.chRightMenu.setValue(!Common.localStorage.getBool("pdfe-hidden-rightmenu", value));
             },
 
             show: function () {
@@ -361,7 +379,11 @@ define([
             tipFitToWidth: 'Fit to width',
             tipInterfaceTheme: 'Interface theme',
             tipDarkDocument: 'Dark document',
-            textLeftMenu: 'Left panel'
+            textLeftMenu: 'Left panel',
+            textRightMenu: 'Right panel',
+            textTabStyle: 'Tab style',
+            textFill: 'Fill',
+            textLine: 'Line'
         }
     }()), PDFE.Views.ViewTab || {}));
 });

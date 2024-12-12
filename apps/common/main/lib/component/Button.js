@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -32,8 +32,7 @@
 /**
  *  Button.js
  *
- *  Created by Alexander Yuzhin on 1/20/14
- *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *  Created on 1/20/14
  *
  */
 
@@ -191,8 +190,12 @@ define([
                     'print(\'<i class=\"icon \' + iconCls + \'\">&nbsp;</i>\'); %>' +
             '<% } %>';
 
+    var templateBtnCaption =
+        '<%= caption %>' +
+        '<i class="caret"></i>';
+
     var templateHugeCaption =
-            '<button type="button" class="btn <%= cls %>" id="<%= id %>" data-hint="<%= dataHint %>" data-hint-direction="<%= dataHintDirection %>" data-hint-offset="<%= dataHintOffset %>" <% if (dataHintTitle) { %> data-hint-title="<%= dataHintTitle %>" <% } %>> ' +
+            '<button type="button" class="btn <%= cls %>" id="<%= id %>" style="<%= style %>" data-hint="<%= dataHint %>" data-hint-direction="<%= dataHintDirection %>" data-hint-offset="<%= dataHintOffset %>" <% if (dataHintTitle) { %> data-hint-title="<%= dataHintTitle %>" <% } %>> ' +
                 '<div class="inner-box-icon">' +
                     templateBtnIcon +
                 '</div>' +
@@ -208,9 +211,7 @@ define([
                     templateBtnIcon +
                 '</div>' +
                 '<div class="inner-box-caption">' +
-                    '<span class="caption"><%= caption %>' +
-                        '<i class="caret"></i>' +
-                    '</span>' +
+                    '<span class="caption">' + templateBtnCaption + '</span>' +
                     '<i class="caret compact-caret"></i>' +
                 '</div>' +
             '</button>' +
@@ -225,9 +226,7 @@ define([
             '</button>' +
             '<button type="button" class="btn <%= cls %> inner-box-caption dropdown-toggle" data-toggle="dropdown" data-hint="<%= dataHint %>" data-hint-direction="<%= dataHintDirection %>" data-hint-offset="<%= dataHintOffset %>" <% if (dataHintTitle) { %> data-hint-title="<%= dataHintTitle %>" <% } %>>' +
                 '<span class="btn-fixflex-vcenter">' +
-                    '<span class="caption"><%= caption %>' +
-                        '<i class="caret"></i>' +
-                    '</span>' +
+                    '<span class="caption">' + templateBtnCaption + '</span>' +
                     '<i class="caret compact-caret"></i>' +
                 '</span>' +
             '</button>' +
@@ -261,6 +260,7 @@ define([
         options : {
             id              : null,
             hint            : false,
+            delayRenderHint : true,
             enableToggle    : false,
             allowDepress    : true,
             toggleGroup     : null,
@@ -277,7 +277,8 @@ define([
             dataHintOffset: '0, 0',
             scaling         : true,
             canFocused      : false, // used for button with menu
-            takeFocusOnClose: false // used for button with menu, for future use in toolbar when canFocused=true, but takeFocusOnClose=false
+            takeFocusOnClose: false, // used for button with menu, for future use in toolbar when canFocused=true, but takeFocusOnClose=false
+            action: '' // action for button
         },
 
         template: _.template([
@@ -352,6 +353,8 @@ define([
             me.style        = me.options.style;
             me.rendered     = false;
             me.stopPropagation = me.options.stopPropagation;
+            me.delayRenderHint = me.options.delayRenderHint;
+            me.action = me.options.action || '';
 
             // if ( /(?<!-)svg-icon(?!-)/.test(me.options.iconCls) )
             //     me.options.scaling = false;
@@ -474,44 +477,6 @@ define([
                 var el = me.cmpEl,
                     isGroup = el.hasClass('btn-group'),
                     isSplit = el.hasClass('split');
-
-                if (me.options.hint) {
-                    var modalParents = me.cmpEl.closest('.asc-window');
-
-                    if (typeof me.options.hint == 'object' && me.options.hint.length>1 && $('button', el).length>0) {
-                        var btnEl = $('button', el);
-                        me.btnEl = $(btnEl[0]);
-                        me.btnMenuEl = $(btnEl[1]);
-                    } else {
-                        me.btnEl = me.cmpEl;
-                        me.btnEl.attr('data-toggle', 'tooltip');
-                    }
-                    me.btnEl.tooltip({
-                        title       : (typeof me.options.hint == 'string') ? me.options.hint : me.options.hint[0],
-                        placement   : me.options.hintAnchor||'cursor'
-                    });
-                    me.btnMenuEl && me.btnMenuEl.tooltip({
-                        title       : me.options.hint[1],
-                        placement   : me.options.hintAnchor||'cursor'
-                    });
-
-                    if (modalParents.length > 0) {
-                        me.btnEl.data('bs.tooltip').tip().css('z-index', parseInt(modalParents.css('z-index')) + 10);
-                        me.btnMenuEl && me.btnMenuEl.data('bs.tooltip').tip().css('z-index', parseInt(modalParents.css('z-index')) + 10);
-                        var onModalClose = function(dlg) {
-                            if (modalParents[0] !== dlg.$window[0]) return;
-                            var tip = me.btnEl.data('bs.tooltip');
-                            if (tip) {
-                                if (tip.dontShow===undefined)
-                                    tip.dontShow = true;
-
-                                tip.hide();
-                            }
-                            Common.NotificationCenter.off({'modal:close': onModalClose});
-                        };
-                        Common.NotificationCenter.on({'modal:close': onModalClose});
-                    }
-                }
 
                 if (_.isString(me.toggleGroup)) {
                     me.enableToggle = true;
@@ -658,9 +623,30 @@ define([
                         }
                     });
                 }
+
+                var $btn = $('button', el).length>0 ? $('button', el) : me.cmpEl;
+
+                if (!me.menu)
+                    $btn.addClass('canfocused');
+
+                if (me.enableToggle && !me.menu) {
+                    $btn.attr('aria-pressed', !!me.pressed)
+                }
+
+                if (me.menu) {
+                    $('[data-toggle^=dropdown]', el).attr('aria-haspopup', 'menu');
+                    $('[data-toggle^=dropdown]', el).attr('aria-expanded', false);
+                }
+
+                if ((!me.caption && me.options.hint) || me.options.ariaLabel) {
+                    var ariaLabel = me.options.ariaLabel ? me.options.ariaLabel : ((typeof me.options.hint == 'string') ? me.options.hint : me.options.hint[0]);
+                    $btn.attr('aria-label', ariaLabel);
+                }
             }
 
             me.rendered = true;
+
+            me.options.hint && me.createHint(me.options.hint);
 
             if (me.pressed) {
                 me.toggle(me.pressed, true);
@@ -691,8 +677,10 @@ define([
 
             this.pressed = state;
 
-            if (this.cmpEl)
+            if (this.cmpEl) {
+                this.cmpEl.attr('aria-pressed', state);
                 this.cmpEl.trigger('button.internal.active', [state]);
+            }
 
             if (!suppressEvent)
                 this.trigger('toggle', this, state);
@@ -771,9 +759,9 @@ define([
         },
 
         setIconCls: function(cls) {
-            var btnIconEl = $(this.el).find('.icon'),
+            var btnIconEl = $(this.el).find('i.icon'),
                 oldCls = this.iconCls,
-                svgIcon = btnIconEl.find('use.zoom-int');
+                svgIcon = $(this.el).find('.icon use.zoom-int');
 
             this.iconCls = cls;
             if (/svgicon/.test(this.iconCls)) {
@@ -794,11 +782,18 @@ define([
 
         changeIcon: function(opts) {
             var me = this,
-                btnIconEl = $(this.el).find('.icon');
+                btnIconEl = $(this.el).find('i.icon');
+            if (btnIconEl.length > 1) btnIconEl = $(btnIconEl[0]);
             if (opts && (opts.curr || opts.next) && btnIconEl) {
-                var svgIcon = btnIconEl.find('use.zoom-int');
-                !!opts.curr && (btnIconEl.removeClass(opts.curr));
-                !!opts.next && !btnIconEl.hasClass(opts.next) && (btnIconEl.addClass(opts.next));
+                var svgIcon = $(this.el).find('.icon use.zoom-int');
+                if (opts.curr) {
+                    btnIconEl.removeClass(opts.curr);
+                    me.iconCls = me.iconCls.replace(opts.curr, '').trim();
+                }
+                if (opts.next) {
+                    !btnIconEl.hasClass(opts.next) && (btnIconEl.addClass(opts.next));
+                    (me.iconCls.indexOf(opts.next)<0) && (me.iconCls += ' ' + opts.next);
+                }
                 svgIcon.length && !!opts.next && svgIcon.attr('href', '#' + opts.next);
 
                 if ( !!me.options.signals ) {
@@ -822,14 +817,14 @@ define([
             return (this.cmpEl) ? this.cmpEl.is(":visible") : $(this.el).is(":visible");
         },
 
-        updateHint: function(hint, isHtml) {
+        createHint: function(hint, isHtml) {
             this.options.hint = hint;
-
             if (!this.rendered) return;
-            
-            var cmpEl = this.cmpEl,
-                modalParents = cmpEl.closest('.asc-window');
 
+            var me = this,
+                cmpEl = this.cmpEl,
+                modalParents = cmpEl.closest('.asc-window'),
+                tipZIndex = modalParents.length > 0 ? parseInt(modalParents.css('z-index')) + 10 : undefined;
 
             if (!this.btnEl) {
                 if (typeof this.options.hint == 'object' && this.options.hint.length>1 && $('button', cmpEl).length>0) {
@@ -838,30 +833,85 @@ define([
                     this.btnMenuEl = $(btnEl[1]);
                 } else {
                     this.btnEl = cmpEl;
-                    this.btnEl.attr('data-toggle', 'tooltip');
                 }
             }
 
-            if (this.btnEl.data('bs.tooltip'))
-                this.btnEl.removeData('bs.tooltip');
-            if (this.btnMenuEl && this.btnMenuEl.data('bs.tooltip'))
-                this.btnMenuEl.removeData('bs.tooltip');
-
-            this.btnEl.tooltip({
-                html: !!isHtml,
-                title       : (typeof hint == 'string') ? hint : hint[0],
-                placement   : this.options.hintAnchor||'cursor'
-            });
-            this.btnMenuEl && this.btnMenuEl.tooltip({
-                html: !!isHtml,
-                title       : hint[1],
-                placement   : this.options.hintAnchor||'cursor'
-            });
-
-            if (modalParents.length > 0) {
-                this.btnEl.data('bs.tooltip').tip().css('z-index', parseInt(modalParents.css('z-index')) + 10);
-                this.btnMenuEl && this.btnMenuEl.data('bs.tooltip').tip().css('z-index', parseInt(modalParents.css('z-index')) + 10);
+            var tip = this.btnEl.data('bs.tooltip');
+            tip && tip.updateTitle(typeof hint === 'string' ? hint : hint[0]);
+            if (this.btnMenuEl) {
+                tip = this.btnMenuEl.data('bs.tooltip');
+                tip && tip.updateTitle(hint[1]);
             }
+            if (!this._isTooltipInited) {
+                if (this.delayRenderHint) {
+                    this.btnEl.one('mouseenter', function(){ // hide tooltip when mouse is over menu
+                        me.btnEl.tooltip({
+                            html: !!isHtml,
+                            title       : (typeof me.options.hint == 'string') ? me.options.hint : me.options.hint[0],
+                            placement   : me.options.hintAnchor||'cursor',
+                            zIndex : tipZIndex,
+                            container   : me.options.hintContainer
+                        });
+                        !Common.Utils.isGecko && (me.btnEl.data('bs.tooltip').enabled = !me.disabled);
+                        me.btnEl.mouseenter();
+                    });
+                    this.btnMenuEl && this.btnMenuEl.one('mouseenter', function(){ // hide tooltip when mouse is over menu
+                        me.btnMenuEl.tooltip({
+                            html: !!isHtml,
+                            title       : me.options.hint[1],
+                            placement   : me.options.hintAnchor||'cursor',
+                            zIndex : tipZIndex,
+                            container   : me.options.hintContainer
+                        });
+                        !Common.Utils.isGecko && (me.btnMenuEl.data('bs.tooltip').enabled = !me.disabled);
+                        me.btnMenuEl.mouseenter();
+                    });
+                } else {
+                    this.btnEl.tooltip({
+                        html: !!isHtml,
+                        title       : (typeof this.options.hint == 'string') ? this.options.hint : this.options.hint[0],
+                        placement   : this.options.hintAnchor||'cursor',
+                        zIndex      : tipZIndex,
+                        container   : this.options.hintContainer
+                    });
+                    this.btnMenuEl && this.btnMenuEl.tooltip({
+                        html: !!isHtml,
+                        title       : this.options.hint[1],
+                        placement   : this.options.hintAnchor||'cursor',
+                        zIndex      : tipZIndex,
+                        container   : this.options.hintContainer
+                    });
+                }
+                if (modalParents.length > 0) {
+                    var onModalClose = function(dlg) {
+                        if (modalParents[0] !== dlg.$window[0]) return;
+                        var tip = me.btnEl.data('bs.tooltip');
+                        if (tip) {
+                            if (tip.dontShow===undefined)
+                                tip.dontShow = true;
+                            tip.hide();
+                        }
+                        if (me.btnMenuEl) {
+                            tip = me.btnMenuEl.data('bs.tooltip');
+                            if (tip) {
+                                if (tip.dontShow===undefined)
+                                    tip.dontShow = true;
+                                tip.hide();
+                            }
+                        }
+                        Common.NotificationCenter.off({'modal:close': onModalClose});
+                    };
+                    Common.NotificationCenter.on({'modal:close': onModalClose});
+                }
+                this._isTooltipInited = true;
+            }
+        },
+
+        updateHint: function(hint, isHtml) {
+            this.options.hint = hint;
+            if (!this.rendered) return;
+
+            this.createHint(hint, isHtml);
 
             if (this.disabled || !Common.Utils.isGecko) {
                 var tip = this.btnEl.data('bs.tooltip');
@@ -877,13 +927,21 @@ define([
                     }
                 }
             }
+
+            if (!this.caption) {
+                var cmpEl = this.cmpEl,
+                    $btn = $('button', cmpEl).length>0 ? $('button', cmpEl) : cmpEl;
+                $btn.attr('aria-label', (typeof hint == 'string') ? hint : hint[0]);
+            }
         },
 
         setCaption: function(caption) {
             if (this.caption != caption) {
-                if ( /icon-top/.test(this.cls) && !!this.caption && /huge/.test(this.cls) ) {
+                var isHuge = false;
+                if ( /icon-top/.test(this.options.cls) && !!this.caption && /huge/.test(this.options.cls) ) {
                     var newCaption = this.getCaptionWithBreaks(caption);
                     this.caption = newCaption || caption;
+                    isHuge = true;
                 } else
                     this.caption = caption;
 
@@ -891,7 +949,7 @@ define([
                     var captionNode = this.cmpEl.find('.caption');
 
                     if (captionNode.length > 0) {
-                        captionNode.html(this.caption);
+                        captionNode.html(isHuge && (this.split || this.menu) ? _.template(templateBtnCaption)({caption: this.caption}) : this.caption);
                     } else {
                         this.cmpEl.find('button:first').addBack().filter('button').html(this.caption);
                     }
@@ -906,6 +964,7 @@ define([
                     this.menu.render(this.cmpEl);
                     this.options.canFocused && this.attachKeyEvents();
                 }
+                this.trigger('menu:created', this);
             }
         },
 
@@ -935,14 +994,14 @@ define([
                 me.options.scaling = ratio;
 
                 if (ratio > 2) {
-                    if (!me.$el.find('svg.icon').length) {
-                        const iconCls = me.iconCls || me.$el.find('i.icon').attr('class');
+                    const $el = me.$el.is('button') ? me.$el : me.$el.find('button:first');
+                    if (!$el.find('svg.icon').length) {
+                        const iconCls = me.iconCls || $el.find('i.icon').attr('class');
                         const re_icon_name = /btn-[^\s]+/.exec(iconCls);
                         const icon_name = re_icon_name ? re_icon_name[0] : "null";
                         const rtlCls = (iconCls ? iconCls.indexOf('icon-rtl') : -1) > -1 ? 'icon-rtl' : '';
                         const svg_icon = '<svg class="icon %rtlCls"><use class="zoom-int" href="#%iconname"></use></svg>'.replace('%iconname', icon_name).replace('%rtlCls', rtlCls);
-
-                        me.$el.find('i.icon').after(svg_icon);
+                        $el.find('i.icon').after(svg_icon);
                     }
                 } else {
                     if (!me.$el.find('i.icon')) {
@@ -971,5 +1030,69 @@ define([
             }
         }
     });
+
+    Common.UI.ButtonCustom = Common.UI.Button.extend(_.extend({
+        initialize : function(options) {
+            options.iconCls = 'icon-custom ' + (options.iconCls || '');
+            Common.UI.Button.prototype.initialize.call(this, options);
+
+            this.baseUrl = options.baseUrl || '';
+            this.iconsSet = Common.UI.iconsStr2IconsObj(options.iconsSet || ['']);
+            var icons = Common.UI.getSuitableIcons(this.iconsSet);
+            this.iconNormalImg = this.baseUrl + icons['normal'];
+            this.iconActiveImg = this.baseUrl + icons['active'];
+        },
+
+        render: function (parentEl) {
+            Common.UI.Button.prototype.render.call(this, parentEl);
+
+            var _current_active = false,
+                me = this;
+            this.cmpButtonFirst = $('button:first', this.$el || $(this.el));
+            const _callback = function (records, observer) {
+                var _hasactive = me.cmpButtonFirst.hasClass('active') || me.cmpButtonFirst.is(':active');
+                if ( _hasactive !== _current_active ) {
+                    me.updateIcon();
+                    _current_active = _hasactive;
+                }
+            };
+            this.cmpButtonFirst[0] && (new MutationObserver(_callback))
+                .observe(this.cmpButtonFirst[0], {
+                    attributes : true,
+                    attributeFilter : ['class'],
+                });
+
+                var onMouseDown = function (e) {
+                    _callback();
+                    $(document).on('mouseup',   onMouseUp);
+                };
+                var onMouseUp = function (e) {
+                    _callback();
+                    $(document).off('mouseup',   onMouseUp);
+                };
+                this.cmpButtonFirst.on('mousedown', _.bind(onMouseDown, this));
+
+            this.updateIcon();
+            Common.NotificationCenter.on('uitheme:changed', this.updateIcons.bind(this));
+        },
+
+        updateIcons: function() {
+            var icons = Common.UI.getSuitableIcons(this.iconsSet);
+            this.iconNormalImg = this.baseUrl + icons['normal'];
+            this.iconActiveImg = this.baseUrl + icons['active'];
+            this.updateIcon();
+        },
+
+        updateIcon: function() {
+            this.$icon && this.$icon.css({'background-image': 'url('+ (this.cmpButtonFirst && (this.cmpButtonFirst.hasClass('active') || this.cmpButtonFirst.is(':active')) ? this.iconActiveImg : this.iconNormalImg) +')'});
+        },
+
+        applyScaling: function (ratio) {
+            if ( this.options.scaling !== ratio ) {
+                this.options.scaling = ratio;
+                this.updateIcons();
+            }
+        }
+    }, Common.UI.ButtonCustom || {}));
 });
 

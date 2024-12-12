@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -33,14 +33,11 @@
 /**
  *  GoalSeekDlg.js
  *
- *  Created by Julia Radzhabova on 21.07.2023
- *  Copyright (c) 2023 Ascensio System SIA. All rights reserved.
+ *  Created on 21.07.2023
  *
  */
 define([
-    'common/main/lib/util/utils',
-    'common/main/lib/component/InputField',
-    'common/main/lib/view/AdvancedSettingsWindow'
+    'common/main/lib/view/AdvancedSettingsWindow',
 ], function () { 'use strict';
 
     SSE.Views.GoalSeekDlg = Common.Views.AdvancedSettingsWindow.extend(_.extend({
@@ -121,8 +118,8 @@ define([
                 name        : 'range',
                 style       : 'width: 100%;',
                 btnHint     : this.textSelectData,
-                allowBlank  : true,
-                validateOnChange: true
+                validateOnBlur: false,
+                hideErrorOnInput: true
             });
             this.txtFormulaCell.on('button:click', _.bind(this.onSelectData, this, 'formula'));
 
@@ -131,17 +128,17 @@ define([
                 name        : 'range',
                 style       : 'width: 100%;',
                 btnHint     : this.textSelectData,
-                allowBlank  : true,
-                validateOnChange: true
+                validateOnBlur: false,
+                hideErrorOnInput: true
             });
             this.txtChangeCell.on('button:click', _.bind(this.onSelectData, this, 'change'));
 
             this.txtExpectVal = new Common.UI.InputField({
                 el          : $('#goal-seek-expect-val'),
                 style       : 'width: 100%;',
-                maskExp     : /[0-9,\-]/,
-                allowBlank  : true,
-                validateOnChange: true
+                maskExp     : /[0-9,\.\-]/,
+                validateOnBlur: false,
+                hideErrorOnInput: true
             });
 
             this.afterRender();
@@ -162,15 +159,6 @@ define([
         },
 
         _setDefaults: function (props) {
-            this.txtFormulaCell.validation = function(value) {
-                return true;
-            };
-            this.txtChangeCell.validation = function(value) {
-                return true;
-            };
-            this.txtExpectVal.validation = function(value) {
-                return true;
-            };
             this.txtFormulaCell.setValue(this.api.asc_getActiveRangeStr(Asc.referenceType.A));
         },
 
@@ -210,6 +198,9 @@ define([
             if (_.isEmpty(this.txtExpectVal.getValue())) {
                 isvalid = false;
                 txtError = this.txtEmpty;
+            } else if (!Common.UI.isValidNumber(this.txtExpectVal.getValue())) {
+                isvalid = false;
+                txtError = this.txtErrorNumber;
             }
             if (!isvalid) {
                 this.txtExpectVal.showError([txtError]);
@@ -265,9 +256,9 @@ define([
                     },1);
                 });
 
-                var xy = me.$window.offset();
+                var xy = Common.Utils.getOffset(me.$window);
                 me.hide();
-                win.show(xy.left + 160, xy.top + 125);
+                win.show(me.$window, xy);
                 win.setSettings({
                     api     : me.api,
                     range   : (!_.isEmpty(txtRange.getValue()) && (txtRange.checkValidate()==true)) ? txtRange.getValue() : ((type=='formula') ? me.dataFormulaCellValid : me.dataChangeCellValid)
@@ -285,6 +276,7 @@ define([
         textMustSingleCell: 'Reference must be to a single cell',
         textMustContainFormula: 'The cell must contain a formula',
         textMustFormulaResultNumber: 'Formula in cell must result in a number',
-        textMustContainValue: 'Cell must contain a value'
+        textMustContainValue: 'Cell must contain a value',
+        txtErrorNumber: 'Your entry cannot be used. An integer or decimal number may be required.'
     }, SSE.Views.GoalSeekDlg || {}))
 });

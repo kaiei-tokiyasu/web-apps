@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -32,8 +32,7 @@
 /**
  *  RightMenu.js
  *
- *  Created by Julia Radzhabova on 3/27/14
- *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *  Created on 3/27/14
  *
  */
 
@@ -53,7 +52,7 @@ define([
 
         initialize: function() {
             this.editMode = true;
-            this._state = {wsLock: false, wsProps: []};
+            this._state = {wsLock: false, wsProps: [], inPivot: false};
 
             this.addListeners({
                 'Toolbar': {
@@ -154,6 +153,7 @@ define([
                 }
             }
             Common.NotificationCenter.trigger('layout:changed', 'rightmenu');
+            Common.NotificationCenter.trigger('edit:complete', this.rightmenu);
         },
 
         onSelectionChanged: function(info) {
@@ -252,11 +252,20 @@ define([
                 this._settings[settingsType].btn.updateHint(this.rightmenu.txtSparklineSettings);
             }
 
-            if (pivotInfo && this.rightmenu.mode.canFeaturePivot) {
+            if (this.rightmenu.mode.canFeaturePivot) {
                 settingsType = Common.Utils.documentSettingsType.Pivot;
-                this._settings[settingsType].props = pivotInfo;
-                this._settings[settingsType].locked = isPivotLocked; // disable pivot settings
-                this._settings[settingsType].hidden = 0;
+                if (pivotInfo) {
+                    this._settings[settingsType].props = pivotInfo;
+                    this._settings[settingsType].locked = isPivotLocked; // disable pivot settings
+                    this._settings[settingsType].hidden = 0;
+                }
+                if (this._state.inPivot !== !this._settings[settingsType].hidden) {
+                    this.rightmenu.clearMoreButton();
+                    this.rightmenu.btnPivot.setVisible(!this._settings[settingsType].hidden);
+                    this.rightmenu.setButtons();
+                    this.rightmenu.setMoreButton();
+                    this._state.inPivot = !this._settings[settingsType].hidden;
+                }
             }
 
             if (SelectedObjects.length<=0 && cellInfo) { // cell is selected
@@ -345,7 +354,7 @@ define([
             this._settings[Common.Utils.documentSettingsType.Image].needShow = false;
             this._settings[Common.Utils.documentSettingsType.Chart].needShow = false;
             this._settings[Common.Utils.documentSettingsType.Table].needShow = false;
-            this._settings[Common.Utils.documentSettingsType.Pivot].needShow = false;
+            pivotInfo && (this._settings[Common.Utils.documentSettingsType.Pivot].needShow = false);
         },
 
         onCoAuthoringDisconnect: function() {
@@ -374,7 +383,9 @@ define([
         },
 
         onInsertPivot:  function() {
-            // this._settings[Common.Utils.documentSettingsType.Pivot].needShow = true;
+            this._settings[Common.Utils.documentSettingsType.Pivot].needShow = true;
+            Common.Utils.InternalSettings.set("sse-rightpanel-active-pivot", 1);
+            this._openRightMenu = true;
         },
 
         UpdateThemeColors:  function() {
@@ -523,11 +534,26 @@ define([
                     this.onSelectionChanged(this.api.asc_getCellInfo());
                     this._lastVisibleSettings = undefined;
                 }
+                !view && this.rightmenu.fireEvent('view:hide', [this, !status]);
                 Common.localStorage.setBool('sse-hidden-rightmenu', !status);
             }
 
             Common.NotificationCenter.trigger('layout:changed', 'main');
             Common.NotificationCenter.trigger('edit:complete', this.rightmenu);
+        },
+
+        onRightMenuOpen: function(type) {
+            if (this._settings[type]===undefined || this._settings[type].hidden || this._settings[type].btn.isDisabled() || this._settings[type].panelId===this.rightmenu.GetActivePane()) return;
+
+            this.tryToShowRightMenu();
+            this.rightmenu.SetActivePane(type, true);
+            this._settings[type].panel.ChangeSettings.call(this._settings[type].panel, this._settings[type].props);
+            this.rightmenu.updateScroller();
+        },
+
+        tryToShowRightMenu: function() {
+            if (this.rightmenu && this.rightmenu.mode && (!this.rightmenu.mode.canBrandingExt || !this.rightmenu.mode.customization || this.rightmenu.mode.customization.rightMenu !== false) && Common.UI.LayoutManager.isElementVisible('rightMenu'))
+                this.onRightMenuHide(null, true);
         },
 
         addNewPlugin: function (button, $button, $panel) {

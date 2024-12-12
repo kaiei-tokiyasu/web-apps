@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -32,15 +32,11 @@
 /**
  *  AdvancedSettingsWindow.js
  *
- *  Created by Julia Radzhabova on 2/21/14
- *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *  Created on 2/21/14
  *
  */
 
-define([
-    'common/main/lib/component/Window'
-], function () { 'use strict';
-
+define([], function () { 'use strict';
     Common.Views.AdvancedSettingsWindow = Common.UI.Window.extend(_.extend({
         initialize : function(options) {
             var _options = {};
@@ -151,6 +147,7 @@ define([
                 hfHeight = parseInt($window.find('.header').css('height')) + parseInt($window.find('.footer').css('height')) + parseInt(bodyEl.css('padding-top')) + parseInt(bodyEl.css('padding-bottom')) +
                            parseInt($window.css('border-bottom-width')) + parseInt($window.css('border-top-width'));
 
+            (height===undefined) && (height = parseInt($window.find('.body > .box').css('height')));
             Common.UI.Window.prototype.setHeight.call(this, height + hfHeight);
             $window.find('.body > .box').css('height', height);
         },

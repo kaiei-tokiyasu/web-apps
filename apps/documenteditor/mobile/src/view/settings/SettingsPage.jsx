@@ -93,7 +93,7 @@ const SettingsPage = inject("storeAppOptions", "storeReview", "storeDocumentInfo
         if (appOptions.customization) {
             _canHelp = appOptions.customization.help !== false;
             _canFeedback = appOptions.customization.feedback !== false;
-            _canDisplayInfo = appOptions.customization.info !== false;
+            _canDisplayInfo = appOptions.customization.mobile?.info !== false;
         }
     }
     
@@ -168,7 +168,7 @@ const SettingsPage = inject("storeAppOptions", "storeReview", "storeDocumentInfo
                         }
                     </ListItem>
                 }
-                {((!isViewer && Device.phone) || isEditableForms) &&
+                {(appOptions.isMobileViewAvailable  && ((Device.phone && !isViewer) || isEditableForms)) &&
                     <ListItem title={t('Settings.textMobileView')}>
                         <SvgIcon slot="media" symbolId={IconMobileView.id} className={'icon icon-svg'} />
                         <Toggle checked={isMobileView} onToggleChange={() => {

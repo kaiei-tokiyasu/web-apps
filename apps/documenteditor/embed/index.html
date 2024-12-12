@@ -41,19 +41,6 @@
             height: 100%;
         }
 
-        .loadmask > .brendpanel .loading-logo {
-            max-width: 200px;
-            height: 20px;
-            margin-left: 10px;
-            text-align: center;
-        }
-
-        .loadmask > .brendpanel .loading-logo > img {
-            display: inline-block;
-            max-width: 100px;
-            max-height: 20px;
-            opacity: 0;
-        }
         .loadmask > .brendpanel .doc-title {
             flex-grow: 1;
         }
@@ -80,7 +67,6 @@
             background: #e2e2e2;
             overflow: hidden;
             position: relative;
-
             -webkit-animation: startFlickerAnimation 2s infinite ease-in-out;
             -moz-animation: startFlickerAnimation 2s infinite ease-in-out;
             -o-animation: startFlickerAnimation 2s infinite ease-in-out;
@@ -146,10 +132,17 @@
     <!--[if lt IE 9]>
       <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.6.1/html5shiv.js"></script>
     <![endif]-->
+      <script>
+          if(/MSIE \d|Trident.*rv:/.test(navigator.userAgent)) {
+              document.write('<script src="../../common/main/lib/util/fix-ie-compat.js"><\/script>');
+              document.write('<script src="../../../../sdkjs/vendor/string.js"><\/script>');
+          }
+      </script>
   </head>
 
   <body class="embed-body">
-      <div id="loading-mask" class="loadmask"><div class="brendpanel"><div><div class="brand-logo loading-logo"><img src=""></div><div class="doc-title"></div><div class="circle"></div></div></div><div class="placeholder"><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div></div>
+      <script type="text/javascript" src="../../common/embed/lib/util/htmlutils.js"></script>
+      <div id="loading-mask" class="loadmask"><div class="brendpanel"><div><div class="doc-title"></div><div class="circle"></div></div></div><div class="placeholder"><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div></div>
 
       <!-- debug begin -->
       <script type="text/javascript">var less=less||{};less.env='development';</script>
@@ -196,26 +189,11 @@
 
            var params = getUrlParams(),
                lang = (params["lang"] || 'en').split(/[\-\_]/)[0],
-               hideLogo = params["headerlogo"]==='',
-               logo = params["headerlogo"] ? encodeUrlParam(params["headerlogo"]) : null,
                isForm = params["isForm"];
 
            window.frameEditorId = params["frameEditorId"];
            window.parentOrigin = params["parentOrigin"];
 
-           var elem = document.querySelector('.loading-logo');
-           if (elem) {
-               if (hideLogo) {
-                   elem.style.display = 'none';
-               } else if (logo) {
-                   elem.style.backgroundImage= 'none';
-                   elem.style.width = 'auto';
-                   elem.style.height = 'auto';
-                   var img = document.querySelector('.loading-logo img');
-                   img && img.setAttribute('src', logo);
-                   img.style.opacity = 1;
-               }
-           }
         </script>
 
       <div id="editor_sdk" class="viewer" style="overflow: hidden;" tabindex="-1"></div>
@@ -251,6 +229,9 @@
           <div class="modal-dialog">
               <div class="modal-content">
                   <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
                       <h4 id="id-critical-error-title"></h4>
                   </div>
                   <div class="modal-body">
@@ -268,7 +249,6 @@
       <!--vendor-->
       <script type="text/javascript" src="../../../vendor/jquery/jquery.min.js"></script>
       <script type="text/javascript" src="../../../vendor/jquery.browser/dist/jquery.browser.min.js"></script>
-      <script type="text/javascript" src="../../../vendor/bootstrap/dist/js/bootstrap.js"></script>
 
       <script type="text/javascript" src="../../../vendor/socketio/socket.io.min.js"></script>
       <script type="text/javascript" src="../../../vendor/xregexp/xregexp-all-min.js"></script>
@@ -291,6 +271,9 @@
       <script type="text/javascript" src="../../common/locale.js"></script>
       <script type="text/javascript" src="../../common/Gateway.js"></script>
       <script type="text/javascript" src="../../common/Analytics.js"></script>
+      <script type="text/javascript" src="../../common/main/lib/mods/dropdown.js"></script>
+      <script type="text/javascript" src="../../common/main/lib/mods/modal.js"></script>
+      <script type="text/javascript" src="../../common/main/lib/mods/tooltip.js"></script>
       <script type="text/javascript" src="../../common/embed/lib/util/LocalStorage.js"></script>
       <script type="text/javascript" src="../../common/embed/lib/util/utils.js"></script>
       <script type="text/javascript" src="../../common/embed/lib/view/LoadMask.js"></script>

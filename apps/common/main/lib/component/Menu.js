@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,8 +34,7 @@
  *
  *  A menu object. This is the container to which you may add {@link Common.UI.MenuItem menu items}.
  *
- *  Created by Alexander Yuzhin on 1/28/14
- *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *  Created on 1/28/14
  *
  */
 
@@ -345,7 +344,7 @@ define([
                         } else if (index === 0) {
                             menuRoot.prepend(item.render().el);
                         } else {
-                            menuRoot.children('li:nth-child(' + (index+1) + ')').before(item.render().el);
+                            menuRoot.children('li:nth-child(' + (index) + ')').after(item.render().el);
                         }
 
                         item.on('click',  _.bind(me.onItemClick, me));
@@ -354,8 +353,19 @@ define([
                 }
             },
 
-            addItem: function(item) {
-                this.insertItem(-1, item);
+            addItem: function(item, beforeCustom) { // if has custom items insert before first custom
+                if (!beforeCustom)
+                    this.insertItem(-1, item);
+                else {
+                    var customIdx = -1;
+                    for (var i=0; i<this.items.length; i++) {
+                        if (this.items[i].isCustomItem) {
+                            customIdx = i;
+                            break;
+                        }
+                    }
+                    this.insertItem(customIdx, item);
+                }
             },
 
             removeItem: function(item) {
@@ -381,15 +391,15 @@ define([
                 this.items.splice(from, len);
             },
 
-            removeAll: function() {
-                var me = this;
-
-                _.each(me.items, function(item){
-                    item.off('click').off('toggle');
-                    item.remove();
-                });
-
-                me.items = [];
+            removeAll: function(keepCustom) { // remove only not-custom items when keepCustom is true
+                for (var i=0; i<this.items.length; i++) {
+                    if (!keepCustom || !this.items[i].isCustomItem) {
+                        this.items[i].off('click').off('toggle');
+                        this.items[i].remove();
+                        this.items.splice(i, 1);
+                        i--;
+                    }
+                }
             },
 
             onBeforeShowMenu: function(e) {
@@ -411,7 +421,7 @@ define([
 
                     var $selected = menuRoot.find('> li .checked');
                     if ($selected.length) {
-                        var itemTop = $selected.position().top,
+                        var itemTop = Common.Utils.getPosition($selected).top,
                             itemHeight = $selected.outerHeight(),
                             listHeight = menuRoot.outerHeight();
                         if (!!this.options.scrollToCheckedItem && (itemTop < 0 || itemTop + itemHeight > listHeight)) {
@@ -517,7 +527,7 @@ define([
                     var item = itemCandidate.cmpEl.find('a');
                     if (this.scroller) {
                         this.scroller.update({alwaysVisibleY: this.scrollAlwaysVisible, wheelSpeed: this.wheelSpeed});
-                        var itemTop = item.position().top,
+                        var itemTop = Common.Utils.getPosition(item).top,
                             itemHeight = item.outerHeight(),
                             listHeight = this.menuRoot.outerHeight();
                         if (itemTop < 0 || itemTop + itemHeight > listHeight) {
@@ -619,7 +629,7 @@ define([
                     }, 10);
                     return;
                 }
-                this.trigger('item:click', this, item, e);
+                this.trigger(item.isCustomItem ? 'item:custom-click' : 'item:click', this, item, e);
             },
 
             onItemToggle: function(item, state, e) {
@@ -640,7 +650,7 @@ define([
                 var menuRoot = this.menuRoot,
                     menuParent  = this.menuAlignEl || menuRoot.parent(),
                     m           = this.menuAlign.match(/^([a-z]+)-([a-z]+)/),
-                    offset      = menuParent.offset(),
+                    offset      = Common.Utils.getOffset(menuParent),
                     docW        = Common.Utils.innerWidth() - 10,
                     docH        = Common.Utils.innerHeight() - 10, // Yep, it's magic number
                     menuW       = menuRoot.outerWidth(),
@@ -685,12 +695,12 @@ define([
                     menuRoot.css('max-height', 'none');
                     menuH = menuRoot.outerHeight();
                     if (top + menuH > docH + cg.top) {
-                        top = docH - menuH;
+                        top = docH - menuH + cg.top;
                     }
                     if (top < cg.top)
                         top = cg.top;
                     if (top + menuH > docH + cg.top) {
-                        menuRoot.css('max-height', (docH - top) + 'px');
+                        menuRoot.css('max-height', (docH - top + cg.top) + 'px');
                         (!this.scroller) && (this.scroller = new Common.UI.Scroller({
                             el: this.$el.find('> .dropdown-menu '),
                             minScrollbarLength: 30,
@@ -724,7 +734,7 @@ define([
                             m = fixedAlign.match(/^([a-z]+)-([a-z]+)/);
                             top  = offset.top  - posMenu[m[1]][1] + posParent[m[2]][1] + this.offset[1] + (fixedOffset || 0);
                         } else
-                            top = docH - menuH;
+                            top = docH - menuH + cg.top;
                     }
 
 
@@ -741,19 +751,35 @@ define([
                 }
             },
 
-            getChecked: function() {
+            getChecked: function(exceptCustom) { // check only not-custom items if exceptCustom is true
                 for (var i=0; i<this.items.length; i++) {
                     var item = this.items[i];
-                    if (item.isChecked && item.isChecked())
+                    if (item.isChecked && item.isChecked() && (!exceptCustom || !item.isCustomItem))
                         return item;
                 }
             },
 
-            clearAll: function() {
+            clearAll: function(keepCustom) { // clear only not-custom items when keepCustom is true
                 _.each(this.items, function(item){
-                    if (item.setChecked)
+                    if (item.setChecked && (!keepCustom || !item.isCustomItem))
                         item.setChecked(false, true);
                 });
+            },
+
+            getItems: function(exceptCustom) { // return only not-custom items when exceptCustom is true
+                if (!exceptCustom) return this.items;
+
+                return _.reject(this.items, function (item) {
+                    return !!item.isCustomItem;
+                });
+            },
+
+            getItemsLength: function(exceptCustom) { // return count of not-custom items when exceptCustom is true
+                if (!exceptCustom) return this.items.length;
+
+                return _.reject(this.items, function (item) {
+                    return !!item.isCustomItem;
+                }).length;
             }
 
         }), {
@@ -774,6 +800,7 @@ define([
             offset      : [0, 0],
             cyclic      : true,
             search      : false,
+            searchFields: ['caption'], // Property name from the item to be searched by
             scrollAlwaysVisible: true,
             scrollToCheckedItem: true, // if true - scroll menu to checked item on menu show
             focusToCheckedItem: false // if true - move focus to checked item on menu show
@@ -1035,7 +1062,7 @@ define([
                 var menuRoot = this.menuRoot,
                     $selected = menuRoot.find('> li .checked');
                 if ($selected.length) {
-                    var itemTop = $selected.position().top,
+                    var itemTop = Common.Utils.getPosition($selected).top,
                         itemHeight = $selected.outerHeight(),
                         listHeight = menuRoot.outerHeight();
                     if (!!this.options.scrollToCheckedItem && (itemTop < 0 || itemTop + itemHeight > listHeight)) {
@@ -1101,26 +1128,36 @@ define([
         },
 
         selectCandidate: function() {
-            var index = (this._search.index && this._search.index != -1) ? this._search.index : 0,
+            var me = this,
+                index = (this._search.index && this._search.index != -1) ? this._search.index : 0,
                 re = new RegExp('^' + ((this._search.full) ? this._search.text : this._search.char), 'i'),
-                isFirstCharsEqual = re.test(this.items[index].caption),
+                isFirstCharsEqual = this.options.searchFields.some(function(field) {
+                    return re.test(me.items[index][field]);
+                }),
                 itemCandidate, idxCandidate;
 
             for (var i=0; i<this.items.length; i++) {
-                var item = this.items[i];
-                if (re.test(item.caption)) {
-                    if (!itemCandidate) {
-                        itemCandidate = item;
-                        idxCandidate = i;
-                        if(!isFirstCharsEqual) 
-                            break;                    
+                var item = this.items[i],
+                    isBreak = false;
+                this.options.searchFields.forEach(function(fieldName) {
+                    if (item[fieldName] && re.test(item[fieldName])) {
+                        if (!itemCandidate) {
+                            itemCandidate = item;
+                            idxCandidate = i;
+                            if(!isFirstCharsEqual) {
+                                isBreak = true;
+                                return;
+                            }
+                        }
+                        if (me._search.full && i==index || i>index) {
+                            itemCandidate = item;
+                            idxCandidate = i;
+                            isBreak = true;
+                            return;
+                        }
                     }
-                    if (this._search.full && i==index || i>index) {
-                        itemCandidate = item;
-                        idxCandidate = i;
-                        break;
-                    }
-                }
+                });
+                if(isBreak) break;
             }
 
             if (itemCandidate) {
@@ -1128,7 +1165,7 @@ define([
                 var item = itemCandidate.el;
                 if (this.scroller) {
                     this.scroller.update({alwaysVisibleY: this.scrollAlwaysVisible});
-                    var itemTop = item.position().top,
+                    var itemTop = Common.Utils.getPosition(item).top,
                         itemHeight = item.outerHeight(),
                         listHeight = this.menuRoot.outerHeight();
                     if (itemTop < 0 || itemTop + itemHeight > listHeight) {
@@ -1155,7 +1192,7 @@ define([
             var menuRoot = this.menuRoot,
                 menuParent  = this.menuAlignEl || menuRoot.parent(),
                 m           = this.menuAlign.match(/^([a-z]+)-([a-z]+)/),
-                offset      = menuParent.offset(),
+                offset      = Common.Utils.getOffset(menuParent),
                 docW        = Common.Utils.innerWidth(),
                 docH        = Common.Utils.innerHeight() - 10, // Yep, it's magic number
                 menuW       = menuRoot.outerWidth(),

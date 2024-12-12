@@ -15,6 +15,7 @@
   "PE.ApplicationController.downloadTextText": "جار تحميل العرض التقديمي...",
   "PE.ApplicationController.errorAccessDeny": "أنت تحاول تنفيذ إجراء ليس لديك صلاحيات تنفيذه.<br> الرجاء الاتصال بمسؤول خادم المستندات.",
   "PE.ApplicationController.errorDefaultMessage": "رمز الخطأ: 1%",
+  "PE.ApplicationController.errorEditingDownloadas": "حدث خطأ اثناء العمل على المستند.<br>استخدم خيار 'التنزيل كـ' لحفظ نسخة احتياطية من الملف ",
   "PE.ApplicationController.errorFilePassProtect": "الملف محمي بكلمة مرور ولا يمكن فتحه.",
   "PE.ApplicationController.errorFileSizeExceed": "يتجاوز حجم الملف الحد المحدد في الخادم. <br> يُرجى الاتصال بمسؤول خادم المستندات.",
   "PE.ApplicationController.errorForceSave": "حدث خطأ أثناء حفظ الملف.<br> استخدم خيار 'التنزيل كـ'لحفظ نسخة احتياطية من الملف ثم حاول مرة أخرى لاحقا.",
@@ -24,6 +25,7 @@
   "PE.ApplicationController.errorInconsistentExtPptx": "حدث خطأ أثناء فتح الملف.<br>محتوى الملف متوافق مع العروض التقديمية(pptx مثلا),لكن الامتداد الحالي(%1) غير متوافق مع المحتوى",
   "PE.ApplicationController.errorInconsistentExtXlsx": "حدث خطأ أثناء فتح الملف.<br>محتوى الملف متوافق مع الجداول الحسابية(xlsx مثلا),لكن الامتداد الحالي(%1) غير متوافق مع المحتوى",
   "PE.ApplicationController.errorLoadingFont": "لم يتم تحميل الخطوط. <br> الرجاء الاتصال بمسؤول خادم المستندات.",
+  "PE.ApplicationController.errorToken": "لم يتم تكوين رمز امان المستند بشكل صحيح.<br>برجاء التواصل مع مسئولك",
   "PE.ApplicationController.errorTokenExpire": "انتهت صلاحية رمز الأمان  الخاص بالمستند.<br> يُرجى الاتصال بمسؤول خادم المستندات.",
   "PE.ApplicationController.errorUpdateVersionOnDisconnect": "تم استعادة الاتصال بالإنترنت ، وتم تغيير إصدار الملف. <br/> قبل أن تتمكن من متابعة العمل، تحتاج إلى تنزيل الملف أو نسخ محتوياته للتأكد من عدم فقدان أي شيء، ثم إعادة تحميل هذه الصفحة.",
   "PE.ApplicationController.errorUserDrop": "لا يمكن الوصول إلى الملف حاليا.",
@@ -47,6 +49,6 @@
   "PE.ApplicationView.txtFileLocation": "فتح موقع الملف",
   "PE.ApplicationView.txtFullScreen": "ملء الشاشة",
   "PE.ApplicationView.txtPrint": "طباعة",
-  "PE.ApplicationView.txtSearch": "بحث",
+  "PE.ApplicationView.txtSearch": "إيجاد",
   "PE.ApplicationView.txtShare": "مشاركة"
 }

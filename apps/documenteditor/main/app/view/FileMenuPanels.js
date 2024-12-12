@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,15 +34,11 @@
  *
  *    Contains views for menu 'File'
  *
- *    Created by Maxim Kadushkin on 20 February 2014
- *    Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *    Created on 20 February 2014
  *
  */
 
-define([
-    'common/main/lib/view/DocumentAccessDialog',
-    'common/main/lib/view/AutoCorrectDialog'
-], function () {
+define([], function () {
     'use strict';
 
     !DE.Views.FileMenuPanels && (DE.Views.FileMenuPanels = {});
@@ -54,8 +50,7 @@ define([
         formats: [[
             {name: 'DOCX',  imgCls: 'docx',  type: Asc.c_oAscFileType.DOCX},
             {name: 'PDF',   imgCls: 'pdf',   type: Asc.c_oAscFileType.PDF},
-            {name: 'ODT',   imgCls: 'odt',   type: Asc.c_oAscFileType.ODT},
-            {name: 'DOCXF',  imgCls: 'docxf',  type: Asc.c_oAscFileType.DOCXF}
+            {name: 'ODT',   imgCls: 'odt',   type: Asc.c_oAscFileType.ODT}
         ],[
             {name: 'DOTX',  imgCls: 'dotx',  type: Asc.c_oAscFileType.DOTX},
             {name: 'DOCM',  imgCls: 'docm',  type: Asc.c_oAscFileType.DOCM},
@@ -110,8 +105,10 @@ define([
 
         render: function() {
             if (/^pdf$/.test(this.fileType)) {
-                this.formats[0].splice(1, 1, {name: 'PDF',  imgCls: 'pdf', type: ''}); // remove pdf
-                this.formats[1].splice(2, 1); // remove pdfa
+                if (!(this.mode && this.mode.isPDFForm)) {
+                    this.formats[0].splice(1, 1, {name: 'PDF',  imgCls: 'pdf', type: ''}); // remove pdf
+                    this.formats[1].splice(2, 1); // remove pdfa
+                }
             } else if (/^xps|oxps$/.test(this.fileType)) {
                 this.formats[0].push({name: this.fileType.toUpperCase(),  imgCls: this.fileType, type: ''}); // original xps/oxps
             } else if (/^djvu$/.test(this.fileType)) {
@@ -119,10 +116,6 @@ define([
                     {name: 'DJVU',  imgCls: 'djvu',  type: ''}, // original djvu
                     {name: 'PDF',   imgCls: 'pdf',   type: Asc.c_oAscFileType.PDF}
                 ]];
-            }
-
-            if (this.mode && !this.mode.canFeatureForms && this.formats.length>2) {
-                this.formats[0].splice(3, 1); // remove docxf
             }
 
             this.$el.html(this.template({rows:this.formats,
@@ -178,8 +171,7 @@ define([
         formats: [[
             {name: 'DOCX',  imgCls: 'docx',  type: Asc.c_oAscFileType.DOCX, ext: '.docx'},
             {name: 'PDF',   imgCls: 'pdf',   type: Asc.c_oAscFileType.PDF, ext: '.pdf'},
-            {name: 'ODT',   imgCls: 'odt',   type: Asc.c_oAscFileType.ODT, ext: '.odt'},
-            {name: 'DOCXF',  imgCls: 'docxf',  type: Asc.c_oAscFileType.DOCXF, ext: '.docxf'}
+            {name: 'ODT',   imgCls: 'odt',   type: Asc.c_oAscFileType.ODT, ext: '.odt'}
         ],[
             {name: 'DOTX',  imgCls: 'dotx',  type: Asc.c_oAscFileType.DOTX, ext: '.dotx'},
             {name: 'DOCM',  imgCls: 'docm',  type: Asc.c_oAscFileType.DOCM, ext: '.docm'},
@@ -235,8 +227,10 @@ define([
 
         render: function() {
             if (/^pdf$/.test(this.fileType)) {
-                this.formats[0].splice(1, 1, {name: 'PDF',  imgCls: 'pdf', type: '', ext: true}); // remove pdf
-                this.formats[1].splice(2, 1); // remove pdfa
+                if (!(this.mode && this.mode.isPDFForm)) {
+                    this.formats[0].splice(1, 1, {name: 'PDF',  imgCls: 'pdf', type: '', ext: true}); // remove pdf
+                    this.formats[1].splice(2, 1); // remove pdfa
+                }
             } else if (/^xps|oxps$/.test(this.fileType)) {
                 this.formats[0].push({name: this.fileType.toUpperCase(),  imgCls: this.fileType, type: '', ext: true}); // original xps/oxps
             } else if (/^djvu$/.test(this.fileType)) {
@@ -244,10 +238,6 @@ define([
                     {name: 'DJVU',  imgCls: 'djvu',  type: '', ext: true}, // original djvu
                     {name: 'PDF',   imgCls: 'pdf',   type: Asc.c_oAscFileType.PDF, ext: '.pdf'}
                 ]];
-            }
-
-            if (this.mode && !this.mode.canFeatureForms && this.formats.length>2) {
-                this.formats[0].splice(3, 1); // remove docxf
             }
 
             this.$el.html(this.template({rows:this.formats,
@@ -331,7 +321,7 @@ define([
                     '<td colspan="2" class="subgroup-name"><label><%= scope.strCoAuthMode %></label></td>',
                 '</tr>',
                 '<tr class="coauth changes-mode">',
-                    '<td colspan="2"><div style="display: flex;"><div id="fms-rb-coauth-mode-fast"></div>',
+                    '<td colspan="2"><div style="display: flex;" role="radiogroup" aria-owns="fms-rb-coauth-mode-strict"><div id="fms-rb-coauth-mode-fast"></div>',
                     '<span style ="display: flex; flex-direction: column;"><label><%= scope.strFast %></label>',
                     '<label class="comment-text"><%= scope.txtFastTip %></label></span></div>',
                     '</td>',
@@ -347,7 +337,7 @@ define([
                     '<td colspan="2" class="subgroup-name"><label><%= scope.txtShowTrackChanges %></label></td>',
                 '</tr>',
                 '<tr class="view-review">',
-                    '<td colspan="2"><div id="fms-rb-show-track-ballons"></div></td>',
+                    '<td colspan="2" role="radiogroup" aria-owns="fms-rb-show-track-tooltips"><div id="fms-rb-show-track-ballons"></div></td>',
                 '</tr>',
                 '<tr class="view-review">',
                     '<td colspan="2"><div id="fms-rb-show-track-tooltips"></div></td>',
@@ -357,7 +347,7 @@ define([
                     '<td colspan="2" class="subgroup-name"><label><%= scope.strShowChanges %></label></td>',
                 '</tr>',
                 '<tr class="coauth changes-show">',
-                    '<td colspan="2"><div id="fms-rb-show-changes-none"></div></td>',
+                    '<td colspan="2" role="radiogroup" aria-owns="fms-rb-show-changes-all"><div id="fms-rb-show-changes-none"></div></td>',
                 '</tr>',
                 '<tr class="coauth changes-show">',
                     '<td colspan="2"><div id="fms-rb-show-changes-all"></div></td>',
@@ -393,6 +383,23 @@ define([
                 '</tr>',
                 '<tr class ="edit divider-group"></tr>',
                 '<tr>',
+                    '<td colspan="2" class="group-name"><label><%= scope.txtAppearance %></label></td>',
+                '</tr>',
+                '<tr class="themes">',
+                    '<td><label><%= scope.strTheme %></label></td>',
+                    '<td>',
+                        '<div><div id="fms-cmb-theme"></div>',
+                        '<div id="fms-chb-dark-mode"></div></div></td>',
+                '</tr>',
+                '<tr class="tab-style">',
+                    '<td><label><%= scope.strTabStyle %></label></td>',
+                    '<td><div id="fms-cmb-tab-style"></div></td>',
+                '</tr>',
+                '<tr class="tab-background">',
+                    '<td colspan="2"><div id="fms-chb-tab-background"></div></td>',
+                '</tr>',
+                '<tr class ="edit divider-group"></tr>',
+                '<tr>',
                     '<td colspan="2" class="group-name"><label><%= scope.txtWorkspace %></label></td>',
                 '</tr>',
                 '<tr>',
@@ -404,20 +411,14 @@ define([
                 '<tr>',
                     '<td colspan="2"><div id="fms-chb-use-alt-key"></div></td>',
                 '</tr>',
-                '<tr class="ui-rtl">',
-                    '<td colspan="2"><div id="fms-chb-rtl-ui" style="display: inline-block;"></div><span class="beta-hint">Beta</span></td>',
-                '</tr>',
-                '<tr class="quick-print">',
+                /*'<tr class="quick-print">',
                     '<td colspan="2"><div style="display: flex;"><div id="fms-chb-quick-print"></div>',
                     '<span style ="display: flex; flex-direction: column;"><label><%= scope.txtQuickPrint %></label>',
                     '<label class="comment-text"><%= scope.txtQuickPrintTip %></label></span></div>',
                     '</td>',
-                '</tr>',
-                '<tr class="themes">',
-                    '<td><label><%= scope.strTheme %></label></td>',
-                    '<td>',
-                        '<div><div id="fms-cmb-theme"></div>',
-                        '<div id="fms-chb-dark-mode"></div></div></td>',
+                '</tr>',*/
+                '<tr class="edit quick-access">',
+                    '<td colspan="2"><button type="button" class="btn btn-text-default" id="fms-btn-customize-quick-access" style="width:auto;display:inline-block;padding-right:10px;padding-left:10px;" data-hint="2" data-hint-direction="bottom" data-hint-offset="medium"><%= scope.txtCustomizeQuickAccess %></button></div></td>',
                 '</tr>',
                 '<tr class="edit">',
                     '<td><label><%= scope.strUnit %></label></td>',
@@ -472,6 +473,14 @@ define([
                 dataHintOffset: 'small'
             });
             (Common.Utils.isIE || Common.Utils.isMac && Common.Utils.isGecko) && this.chUseAltKey.$el.parent().parent().hide();
+
+            this.chTabBack = new Common.UI.CheckBox({
+                el: $markup.findById('#fms-chb-tab-background'),
+                labelText: this.txtTabBack,
+                dataHint: '2',
+                dataHintDirection: 'left',
+                dataHintOffset: 'small'
+            });
 
             this.chScreenReader = new Common.UI.CheckBox({
                 el: $markup.findById('#fms-chb-scrn-reader'),
@@ -577,7 +586,7 @@ define([
                 el          : $markup.findById('#fms-cmb-zoom'),
                 style       : 'width: 160px;',
                 editable    : false,
-                menuCls     : 'menu-aligned',
+                restoreMenuHeightAndTop: true,
                 cls         : 'input-group-nr',
                 menuStyle   : 'min-width:100%; max-height: 157px;',
                 data        : [
@@ -609,7 +618,8 @@ define([
                 name        : 'coauth-mode',
                 dataHint: '2',
                 dataHintDirection: 'left',
-                dataHintOffset: 'small'
+                dataHintOffset: 'small',
+                ariaLabel: this.strFast + ' ' + this.txtFastTip
             });
             this.rbCoAuthModeFast.on('change', function(field, newValue, eOpts){
                 if (newValue) {
@@ -624,7 +634,8 @@ define([
                 name        : 'coauth-mode',
                 dataHint: '2',
                 dataHintDirection: 'left',
-                dataHintOffset: 'small'
+                dataHintOffset: 'small',
+                ariaLabel: this.strStrict + ' ' + this.txtStrictTip
             });
             this.rbCoAuthModeStrict.on('change', function(field, newValue, eOpts){
                 newValue && me.onChangeCoAuthMode(0);
@@ -696,7 +707,7 @@ define([
                 el          : $markup.find('#fms-cmb-font-render'),
                 style       : 'width: 160px;',
                 editable    : false,
-                menuCls     : 'menu-aligned',
+                restoreMenuHeightAndTop: true,
                 menuStyle   : 'min-width:100%;',
                 cls         : 'input-group-nr',
                 itemsTemplate: itemsTemplate,
@@ -715,7 +726,7 @@ define([
             this.cmbUnit = new Common.UI.ComboBox({
                 el          : $markup.findById('#fms-cmb-unit'),
                 style       : 'width: 160px;',
-                menuCls     : 'menu-aligned',
+                restoreMenuHeightAndTop: true,
                 menuStyle   : 'min-width:100%;',
                 editable    : false,
                 cls         : 'input-group-nr',
@@ -733,7 +744,7 @@ define([
                 el          : $markup.findById('#fms-cmb-macros'),
                 style       : 'width: 160px;',
                 editable    : false,
-                menuCls     : 'menu-aligned',
+                restoreMenuHeightAndTop: true,
                 menuStyle   : 'min-width:100%;',
                 cls         : 'input-group-nr',
                 data        : [
@@ -765,12 +776,17 @@ define([
             });
             this.btnAutoCorrect.on('click', _.bind(this.autoCorrect, this));
 
+            this.btnCustomizeQuickAccess = new Common.UI.Button({
+                el: $markup.findById('#fms-btn-customize-quick-access')
+            });
+            this.btnCustomizeQuickAccess.on('click', _.bind(this.customizeQuickAccess, this));
+
             this.cmbTheme = new Common.UI.ComboBox({
                 el          : $markup.findById('#fms-cmb-theme'),
                 style       : 'width: 160px;',
                 menuStyle   : 'min-width:100%;',
                 editable    : false,
-                menuCls     : 'menu-aligned',
+                restoreMenuHeightAndTop: true,
                 cls         : 'input-group-nr',
                 dataHint: '2',
                 dataHintDirection: 'bottom',
@@ -792,15 +808,23 @@ define([
                 })).on('click', _.bind(me.applySettings, me));
             });
 
-            this.chRTL = new Common.UI.CheckBox({
-                el: $markup.findById('#fms-chb-rtl-ui'),
-                labelText: this.strRTLSupport,
+            this.cmbTabStyle = new Common.UI.ComboBox({
+                el          : $markup.findById('#fms-cmb-tab-style'),
+                style       : 'width: 160px;',
+                menuStyle   : 'min-width:100%;',
+                editable    : false,
+                restoreMenuHeightAndTop: true,
+                cls         : 'input-group-nr',
+                data        : [
+                    {value: 'fill', displayValue: this.textFill},
+                    {value: 'line', displayValue: this.textLine}
+                ],
                 dataHint: '2',
-                dataHintDirection: 'left',
-                dataHintOffset: 'small'
+                dataHintDirection: 'bottom',
+                dataHintOffset: 'big'
             });
 
-            this.chQuickPrint = new Common.UI.CheckBox({
+            /*this.chQuickPrint = new Common.UI.CheckBox({
                 el: $markup.findById('#fms-chb-quick-print'),
                 labelText: '',
                 dataHint: '2',
@@ -810,7 +834,7 @@ define([
 
             this.chQuickPrint.$el.parent().on('click', function (){
                 me.chQuickPrint.setValue(!me.chQuickPrint.isChecked());
-            });
+            });*/
 
             this.pnlSettings = $markup.find('.flex-settings').addBack().filter('.flex-settings');
             this.pnlApply = $markup.find('.fms-flex-apply').addBack().filter('.fms-flex-apply');
@@ -852,6 +876,12 @@ define([
                 this.pnlSettings.css('overflow', scrolled ? 'hidden' : 'visible');
                 this.scroller.update();
                 this.pnlSettings.toggleClass('bordered', this.scroller.isVisible());
+                this.cmbZoom.options.menuAlignEl = scrolled ? this.pnlSettings : null;
+                this.cmbUnit.options.menuAlignEl = scrolled ? this.pnlSettings : null;
+                this.cmbFontRender.options.menuAlignEl = scrolled ? this.pnlSettings : null;
+                this.cmbTheme.options.menuAlignEl = scrolled ? this.pnlSettings : null;
+                this.cmbMacros.options.menuAlignEl = scrolled ? this.pnlSettings : null;
+                this.cmbTabStyle.options.menuAlignEl = scrolled ? this.pnlSettings : null;
             }
         },
 
@@ -876,13 +906,17 @@ define([
             $('tr.view-review', this.el)[mode.canViewReview ? 'show' : 'hide']();
             $('tr.spellcheck', this.el)[mode.isEdit && Common.UI.FeaturesManager.canChange('spellcheck') ? 'show' : 'hide']();
             $('tr.comments', this.el)[mode.canCoAuthoring ? 'show' : 'hide']();
-            $('tr.ui-rtl', this.el)[mode.uiRtl ? 'show' : 'hide']();
             /** coauthoring end **/
 
-            $('tr.quick-print', this.el)[mode.canQuickPrint && !(mode.customization && mode.customization.compactHeader && mode.isEdit) ? 'show' : 'hide']();
+            $('tr.quick-print', this.el)[mode.canQuickPrint && !(mode.compactHeader && mode.isEdit) ? 'show' : 'hide']();
             $('tr.macros', this.el)[(mode.customization && mode.customization.macros===false) ? 'hide' : 'show']();
             if ( !Common.UI.Themes.available() ) {
                 $('tr.themes, tr.themes + tr.divider', this.el).hide();
+            }
+            $('tr.tab-background', this.el)[!Common.Utils.isIE && Common.UI.FeaturesManager.canChange('tabBackground', true) ? 'show' : 'hide']();
+            $('tr.tab-style', this.el)[Common.UI.FeaturesManager.canChange('tabStyle', true) ? 'show' : 'hide']();
+            if (mode.compactHeader) {
+                $('tr.quick-access', this.el).hide();
             }
         },
 
@@ -950,7 +984,7 @@ define([
             this.cmbMacros.setValue(item ? item.get('value') : 0);
 
             this.chPaste.setValue(Common.Utils.InternalSettings.get("de-settings-paste-button"));
-            this.chQuickPrint.setValue(Common.Utils.InternalSettings.get("de-settings-quick-print-button"));
+            //this.chQuickPrint.setValue(Common.Utils.InternalSettings.get("de-settings-quick-print-button"));
             this.chSmartSelection.setValue(Common.Utils.InternalSettings.get("de-settings-smart-selection"));
 
             var data = [];
@@ -965,13 +999,18 @@ define([
             }
             this.chDarkMode.setValue(Common.UI.Themes.isContentThemeDark());
             this.chDarkMode.setDisabled(!Common.UI.Themes.isDarkTheme());
-            this.chRTL.setValue(Common.localStorage.getBool("ui-rtl", Common.Locale.isCurrentLanguageRtl()));
 
             if (this.mode.canViewReview) {
                 value = Common.Utils.InternalSettings.get("de-settings-review-hover-mode");
                 this.rbChangesTip.setValue(value);
                 this.rbChangesBallons.setValue(!value);
             }
+
+            this.chTabBack.setValue(Common.Utils.InternalSettings.get("settings-tab-background")==='toolbar');
+
+            value = Common.Utils.InternalSettings.get("settings-tab-style");
+            item = this.cmbTabStyle.store.findWhere({value: value});
+            this.cmbTabStyle.setValue(item ? item.get('value') : 'fill');
         },
 
         applySettings: function() {
@@ -980,8 +1019,9 @@ define([
                 Common.UI.Themes.toggleContentTheme();
             Common.localStorage.setItem("de-settings-show-alt-hints", this.chUseAltKey.isChecked() ? 1 : 0);
             Common.Utils.InternalSettings.set("de-settings-show-alt-hints", Common.localStorage.getBool("de-settings-show-alt-hints"));
+
             Common.localStorage.setItem("de-settings-zoom", this.cmbZoom.getValue());
-            Common.Utils.InternalSettings.set("de-settings-zoom", Common.localStorage.getItem("de-settings-zoom"));
+
             Common.localStorage.setItem("app-settings-screen-reader", this.chScreenReader.isChecked() ? 1 : 0);
 
             /** coauthoring begin **/
@@ -1024,9 +1064,15 @@ define([
 
             Common.localStorage.setItem("de-settings-paste-button", this.chPaste.isChecked() ? 1 : 0);
             Common.localStorage.setItem("de-settings-smart-selection", this.chSmartSelection.isChecked() ? 1 : 0);
-            var isRtlChanged = this.chRTL.$el.is(':visible') && Common.localStorage.getBool("ui-rtl", Common.Locale.isCurrentLanguageRtl()) !== this.chRTL.isChecked();
-            Common.localStorage.setBool("ui-rtl", this.chRTL.isChecked());
-            Common.localStorage.setBool("de-settings-quick-print-button", this.chQuickPrint.isChecked());
+            //Common.localStorage.setBool("de-settings-quick-print-button", this.chQuickPrint.isChecked());
+
+            if (!Common.Utils.isIE && Common.UI.FeaturesManager.canChange('tabBackground', true)) {
+                Common.UI.TabStyler.setBackground(this.chTabBack.isChecked() ? 'toolbar' : 'header');
+            }
+
+            if (Common.UI.FeaturesManager.canChange('tabStyle', true)) {
+                Common.UI.TabStyler.setStyle(this.cmbTabStyle.getValue());
+            }
 
             Common.localStorage.save();
 
@@ -1035,16 +1081,6 @@ define([
 
                 if (this._oldUnits !== this.cmbUnit.getValue())
                     Common.NotificationCenter.trigger('settings:unitschanged', this);
-            }
-
-            if (isRtlChanged) {
-                var config = {
-                    title: this.txtWorkspaceSettingChange,
-                    msg: this.txtRestartEditor,
-                    iconCls: 'warn',
-                    buttons: ['ok']
-                };
-                Common.UI.alert(config);
             }
         },
 
@@ -1079,6 +1115,24 @@ define([
             this.dlgAutoCorrect.show();
         },
 
+        customizeQuickAccess: function () {
+            if (this.dlgQuickAccess && this.dlgQuickAccess.isVisible()) return;
+            this.dlgQuickAccess = new Common.Views.CustomizeQuickAccessDialog({
+                showSave: this.mode.showSaveButton,
+                showPrint: this.mode.canPrint && this.mode.twoLevelHeader,
+                showQuickPrint: this.mode.canQuickPrint && this.mode.twoLevelHeader,
+                mode: this.mode,
+                props: {
+                    save: Common.localStorage.getBool('de-quick-access-save', true),
+                    print: Common.localStorage.getBool('de-quick-access-print', true),
+                    quickPrint: Common.localStorage.getBool('de-quick-access-quick-print', true),
+                    undo: Common.localStorage.getBool('de-quick-access-undo', true),
+                    redo: Common.localStorage.getBool('de-quick-access-redo', true)
+                }
+            });
+            this.dlgQuickAccess.show();
+        },
+
         strZoom: 'Default Zoom Value',
         /** coauthoring begin **/
         strShowChanges: 'Real-time Collaboration Changes',
@@ -1107,7 +1161,6 @@ define([
         textForceSave: 'Save to Server',
         textOldVersions: 'Make the files compatible with older MS Word versions when saved as DOCX, DOTX',
         txtCacheMode: 'Default cache mode',
-        strRTLSupport: 'RTL interface',
         strMacrosSettings: 'Macros Settings',
         txtWarnMacros: 'Show Notification',
         txtRunMacros: 'Enable All',
@@ -1139,11 +1192,15 @@ define([
         txtAdvancedSettings: 'Advanced Settings',
         txtQuickPrint: 'Show the Quick Print button in the editor header',
         txtQuickPrintTip: 'The document will be printed on the last selected or default printer',
-        txtWorkspaceSettingChange: 'Workspace setting (RTL interface) change',
-        txtRestartEditor: 'Please restart document editor so that your workspace settings can take effect',
         txtLastUsed: 'Last used',
         textSmartSelection: 'Use smart paragraph selection',
-        txtScreenReader: 'Turn on screen reader support'
+        txtScreenReader: 'Turn on screen reader support',
+        txtCustomizeQuickAccess: 'Customize quick access',
+        txtTabBack: 'Use toolbar color as tabs background',
+        strTabStyle: 'Tab style',
+        textFill: 'Fill',
+        textLine: 'Line',
+        txtAppearance: 'Appearance'
     }, DE.Views.FileMenuPanels.Settings || {}));
 
     DE.Views.FileMenuPanels.CreateNew = Common.UI.BaseView.extend(_.extend({
@@ -1152,7 +1209,7 @@ define([
 
         events: function() {
             return {
-                'click .blank-document-btn':_.bind(this._onBlankDocument, this),
+                'click .blank-document':_.bind(this._onBlankDocument, this),
                 'click .thumb-list .thumb-wrap': _.bind(this._onDocumentTemplate, this)
             };
         },
@@ -1161,8 +1218,8 @@ define([
             '<div class="header"><%= scope.txtCreateNew %></div>',
             '<div class="thumb-list">',
                 '<% if (blank) { %> ',
-                '<div class="blank-document">',
-                    '<div class="blank-document-btn" data-hint="2" data-hint-direction="left-top" data-hint-offset="2, 10">',
+                '<div class="blank-document" data-hint="2" data-hint-direction="left-top" data-hint-offset="14, 22">',
+                    '<div class="blank-document-btn">',
                         '<div class="btn-blank-format"><div class ="svg-format-blank"></div></div>',
                     '</div>',
                     '<div class="title"><%= scope.txtBlank %></div>',
@@ -1245,141 +1302,145 @@ define([
             this.rendered = false;
 
             this.template = _.template([
-            '<div class="flex-settings">',
-                '<div class="header">' + this.txtDocumentInfo + '</div>',
                 '<table class="main">',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtPlacement + '</label></td>',
-                        '<td class="right"><label id="id-info-placement">-</label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtOwner + '</label></td>',
-                        '<td class="right"><label id="id-info-owner">-</label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtUploaded + '</label></td>',
-                        '<td class="right"><label id="id-info-uploaded">-</label></td>',
-                    '</tr>',
-                    '<tr class="divider general"></tr>',
-                    '<tr class="divider general"></tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtPages + '</label></td>',
-                        '<td class="right"><label id="id-info-pages"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtParagraphs + '</label></td>',
-                        '<td class="right"><label id="id-info-paragraphs"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtWords + '</label></td>',
-                        '<td class="right"><label id="id-info-words"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtSymbols + '</label></td>',
-                        '<td class="right"><label id="id-info-symbols"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtSpaces + '</label></td>',
-                        '<td class="right"><label id="id-info-spaces"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                        '<td class="left"><label>' + this.txtPageSize + '</label></td>',
-                        '<td class="right"><label id="id-info-page-size"></label></td>',
-                    '</tr>',
-                    '<tr class="divider"></tr>',
-                    '<tr class="divider"></tr>',
+                    '<tbody><td class="header">' + this.txtDocumentInfo + '</td></tbody>',
+                    '<tbody>',
+                        '<tr>',
+                            '<td class="title"><label>' + this.txtCommon + '</label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtPlacement + '</label></td>',
+                            '<td class="right"><label id="id-info-placement">-</label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtOwner + '</label></td>',
+                            '<td class="right"><label id="id-info-owner">-</label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtUploaded + '</label></td>',
+                            '<td class="right"><label id="id-info-uploaded">-</label></td>',
+                        '</tr>',
+                        '<tr></tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtModifyDate + '</label></td>',
+                            '<td class="right"><label id="id-info-modify-date"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtModifyBy + '</label></td>',
+                            '<td class="right"><label id="id-info-modify-by"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtTitle + '</label></td>',
+                            '<td class="right"><label id="id-lbl-info-title"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtSubject + '</label></td>',
+                            '<td class="right"><label id="id-lbl-info-subject"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtCreated + '</label></td>',
+                            '<td class="right"><label id="id-info-date"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtAppName + '</label></td>',
+                            '<td class="right"><label id="id-info-appname"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtAuthor + '</label></td>',
+                            '<td class="right"><label id="id-lbl-info-author"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtPdfProducer + '</label></td>',
+                            '<td class="right"><label id="id-info-pdf-produce"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtPdfVer + '</label></td>',
+                            '<td class="right"><label id="id-info-pdf-ver"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtPdfTagged + '</label></td>',
+                            '<td class="right"><label id="id-info-pdf-tagged"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtFastWV + '</label></td>',
+                            '<td class="right"><label id="id-info-fast-wv"></label></td>',
+                        '</tr>',
+                    '</tbody>',
+                    '<tbody>',
+                        '<tr>',
+                            '<td class="title"><label>' + this.txtStatistics + '</label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtPages + '</label></td>',
+                            '<td class="right"><label id="id-info-pages"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtParagraphs + '</label></td>',
+                            '<td class="right"><label id="id-info-paragraphs"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtWords + '</label></td>',
+                            '<td class="right"><label id="id-info-words"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtSymbols + '</label></td>',
+                            '<td class="right"><label id="id-info-symbols"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtSpaces + '</label></td>',
+                            '<td class="right"><label id="id-info-spaces"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtPageSize + '</label></td>',
+                            '<td class="right"><label id="id-info-page-size"></label></td>',
+                        '</tr>',
+                    '</tbody>',
                     // '<tr>',
                     //     '<td class="left"><label>' + this.txtEditTime + '</label></td>',
                     //     '<td class="right"><label id="id-info-edittime"></label></td>',
                     // '</tr>',
-                    '<tr class="docx-info">',
-                        '<td class="left"><label>' + this.txtTitle + '</label></td>',
-                        '<td class="right"><div id="id-info-title"></div></td>',
-                    '</tr>',
-                    '<tr class="docx-info">',
-                        '<td class="left"><label>' + this.txtTags + '</label></td>',
-                        '<td class="right"><div id="id-info-tags"></div></td>',
-                    '</tr>',
-                    '<tr class="docx-info">',
-                        '<td class="left"><label>' + this.txtSubject + '</label></td>',
-                        '<td class="right"><div id="id-info-subject"></div></td>',
-                    '</tr>',
-                    '<tr class="docx-info">',
-                        '<td class="left"><label>' + this.txtComment + '</label></td>',
-                        '<td class="right"><div id="id-info-comment"></div></td>',
-                    '</tr>',
-                    '<tr class="divider docx-info"></tr>',
-                    '<tr class="divider docx-info"></tr>',
-                    '<tr class="pdf-info">',
-                        '<td class="left"><label>' + this.txtTitle + '</label></td>',
-                        '<td class="right"><label id="id-lbl-info-title"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                        '<td class="left"><label>' + this.txtSubject + '</label></td>',
-                        '<td class="right"><label id="id-lbl-info-subject"></label></td>',
-                    '</tr>',
-                    '<tr class="divider pdf-info pdf-title"></tr>',
-                    '<tr class="divider pdf-info pdf-title"></tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtModifyDate + '</label></td>',
-                        '<td class="right"><label id="id-info-modify-date"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtModifyBy + '</label></td>',
-                        '<td class="right"><label id="id-info-modify-by"></label></td>',
-                    '</tr>',
-                    '<tr class="divider modify"></tr>',
-                    '<tr class="divider modify"></tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtCreated + '</label></td>',
-                        '<td class="right"><label id="id-info-date"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                         '<td class="left"><label>' + this.txtAppName + '</label></td>',
-                         '<td class="right"><label id="id-info-appname"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                        '<td class="left"><label>' + this.txtAuthor + '</label></td>',
-                        '<td class="right"><label id="id-lbl-info-author"></label></td>',
-                    '</tr>',
-                    '<tr class="divider pdf-info"></tr>',
-                    '<tr class="pdf-info">',
-                         '<td class="left"><label>' + this.txtPdfProducer + '</label></td>',
-                         '<td class="right"><label id="id-info-pdf-produce"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                         '<td class="left"><label>' + this.txtPdfVer + '</label></td>',
-                         '<td class="right"><label id="id-info-pdf-ver"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                         '<td class="left"><label>' + this.txtPdfTagged + '</label></td>',
-                         '<td class="right"><label id="id-info-pdf-tagged"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                         '<td class="left"><label>' + this.txtFastWV + '</label></td>',
-                         '<td class="right"><label id="id-info-fast-wv"></label></td>',
-                    '</tr>',
-                    '<tr class="docx-info">',
-                        '<td class="left" style="vertical-align: top;"><label style="margin-top: 3px;">' + this.txtAuthor + '</label></td>',
-                        '<td class="right" style="vertical-align: top;"><div id="id-info-author">',
+                    '<tbody class="properties-tab">',
+                        '<tr>',
+                            '<td class="title"><label>' + this.txtProperties + '</label></td>',
+                        '</tr>',
+                        '<tr class="docx-info author-info">',
+                            '<td class="left"><label>' + this.txtAuthor + '</label></td>',
+                            '<td class="right"><div id="id-info-author">',
                             '<table>',
                             '<tr>',
-                                '<td><div id="id-info-add-author"><input type="text" spellcheck="false" class="form-control" placeholder="' +  this.txtAddAuthor +'"></div></td>',
+                            '<td><div id="id-info-add-author"><input type="text" spellcheck="false" class="form-control" placeholder="' +  this.txtAddAuthor +'"></div></td>',
                             '</tr>',
                             '</table>',
-                        '</div></td>',
-                    '</tr>',
-                    '<tr style="height: 5px;"></tr>',
-                '</table>',
-            '</div>',
-            '<div id="fms-flex-apply">',
-                '<table class="main">',
-                    '<tr>',
-                        '<td class="left"></td>',
-                        '<td class="right"><button id="fminfo-btn-apply" class="btn normal dlg-btn primary" data-hint="2" data-hint-direction="bottom" data-hint-offset="big"><%= scope.okButtonText %></button></td>',
-                    '</tr>',
-                '</table>',
-            '</div>'
+                            '</div></td>',
+                        '</tr>',
+                        '<tr class="docx-info">',
+                            '<td class="left"><label>' + this.txtTitle + '</label></td>',
+                            '<td class="right"><div id="id-info-title"></div></td>',
+                        '</tr>',
+                        '<tr class="docx-info">',
+                            '<td class="left"><label>' + this.txtTags + '</label></td>',
+                            '<td class="right"><div id="id-info-tags"></div></td>',
+                        '</tr>',
+                        '<tr class="docx-info">',
+                            '<td class="left"><label>' + this.txtSubject + '</label></td>',
+                            '<td class="right"><div id="id-info-subject"></div></td>',
+                        '</tr>',
+                        '<tr class="docx-info">',
+                            '<td class="left"><label>' + this.txtComment + '</label></td>',
+                            '<td class="right"><div id="id-info-comment"></div></td>',
+                        '</tr>',
+                    '</tbody>',
+                    '<tbody>',
+                        '<tr>',
+                            '<td class="left"></td>',
+                            '<td class="right">',
+                            '<button id="fminfo-btn-add-property" class="btn" data-hint="2" data-hint-direction="bottom" data-hint-offset="big">',
+                            '<span>' + this.txtAddProperty + '</span>',
+                            '</button>',
+                            '</td>',
+                        '</tr>',
+                    '</tbody>',
+                '</table>'
             ].join(''));
 
             this.infoObj = {PageCount: 0, WordsCount: 0, ParagraphCount: 0, SymbolsCount: 0, SymbolsWSCount:0};
@@ -1435,8 +1496,13 @@ define([
                 validateOnBlur: false,
                 dataHint: '2',
                 dataHintDirection: 'left',
-                dataHintOffset: 'small'
-            }).on('keydown:before', keyDownBefore);
+                dataHintOffset: 'small',
+                ariaLabel: this.txtTitle
+            }).on('keydown:before', keyDownBefore).on('changed:after', function(_, newValue) {
+                me.coreProps.asc_putTitle(newValue);
+                me.api.asc_setCoreProps(me.coreProps);
+            });
+
             this.inputTags = new Common.UI.InputField({
                 el          : $markup.findById('#id-info-tags'),
                 style       : 'width: 200px;',
@@ -1444,8 +1510,13 @@ define([
                 validateOnBlur: false,
                 dataHint: '2',
                 dataHintDirection: 'left',
-                dataHintOffset: 'small'
-            }).on('keydown:before', keyDownBefore);
+                dataHintOffset: 'small',
+                ariaLabel: this.txtTags
+            }).on('keydown:before', keyDownBefore).on('changed:after', function(_, newValue) {
+                me.coreProps.asc_putKeywords(newValue);
+                me.api.asc_setCoreProps(me.coreProps);
+            });
+
             this.inputSubject = new Common.UI.InputField({
                 el          : $markup.findById('#id-info-subject'),
                 style       : 'width: 200px;',
@@ -1453,8 +1524,13 @@ define([
                 validateOnBlur: false,
                 dataHint: '2',
                 dataHintDirection: 'left',
-                dataHintOffset: 'small'
-            }).on('keydown:before', keyDownBefore);
+                dataHintOffset: 'small',
+                ariaLabel: this.txtSubject
+            }).on('keydown:before', keyDownBefore).on('changed:after', function(_, newValue) {
+                me.coreProps.asc_putSubject(newValue);
+                me.api.asc_setCoreProps(me.coreProps);
+            });
+
             this.inputComment = new Common.UI.InputField({
                 el          : $markup.findById('#id-info-comment'),
                 style       : 'width: 200px;',
@@ -1462,8 +1538,12 @@ define([
                 validateOnBlur: false,
                 dataHint: '2',
                 dataHintDirection: 'left',
-                dataHintOffset: 'small'
-            }).on('keydown:before', keyDownBefore);
+                dataHintOffset: 'small',
+                ariaLabel: this.txtComment
+            }).on('keydown:before', keyDownBefore).on('changed:after', function(_, newValue) {
+                me.coreProps.asc_putDescription(newValue);
+                me.api.asc_setCoreProps(me.coreProps);
+            });
 
             // modify info
             this.lblModifyDate = $markup.findById('#id-info-modify-date');
@@ -1474,7 +1554,7 @@ define([
             this.lblApplication = $markup.findById('#id-info-appname');
             this.tblAuthor = $markup.findById('#id-info-author table');
             this.trAuthor = $markup.findById('#id-info-add-author').closest('tr');
-            this.authorTpl = '<tr><td><div style="display: inline-block;width: 200px;"><input type="text" spellcheck="false" class="form-control" readonly="true" value="{0}"></div><div class="tool close img-commonctrl img-colored" data-hint="2" data-hint-direction="right" data-hint-offset="small"></div></td></tr>';
+            this.authorTpl = '<tr><td><div style="display: inline-block;width: 200px;"><input type="text" spellcheck="false" class="form-control" readonly="true" value="{0}"></div><div class="tool close img-colored" data-hint="2" data-hint-direction="right" data-hint-offset="small"></div></td></tr>';
 
             this.tblAuthor.on('click', function(e) {
                 var btn = $markup.find(e.target);
@@ -1483,6 +1563,8 @@ define([
                         idx = me.tblAuthor.find('tr').index(el);
                     el.remove();
                     me.authors.splice(idx, 1);
+                    me.coreProps.asc_putCreator(me.authors.join(';'));
+                    me.api.asc_setCoreProps(me.coreProps);
                     me.updateScroller(true);
                 }
             });
@@ -1494,7 +1576,8 @@ define([
                 placeHolder: this.txtAddAuthor,
                 dataHint: '2',
                 dataHintDirection: 'left',
-                dataHintOffset: 'small'
+                dataHintOffset: 'small',
+                ariaLabel: this.txtAuthor
             }).on('changed:after', function(input, newValue, oldValue, e) {
                 if (newValue == oldValue) return;
 
@@ -1514,6 +1597,9 @@ define([
                     });
                     !isFromApply && me.inputAuthor.setValue('');
                 }
+
+                me.coreProps.asc_putCreator(me.authors.join(';'));
+                me.api.asc_setCoreProps(me.coreProps);
             }).on('keydown:before', keyDownBefore);
 
             // pdf info
@@ -1526,13 +1612,10 @@ define([
             this.lblPdfProducer = $markup.findById('#id-info-pdf-produce');
             this.lblFastWV = $markup.findById('#id-info-fast-wv');
 
-            this.btnApply = new Common.UI.Button({
-                el: $markup.findById('#fminfo-btn-apply')
+            this.btnAddProperty = new Common.UI.Button({
+                el: $markup.findById('#fminfo-btn-add-property')
             });
-            this.btnApply.on('click', _.bind(this.applySettings, this));
-
-            this.pnlInfo = $markup.find('.flex-settings').addBack().filter('.flex-settings');
-            this.pnlApply = $markup.findById('#fms-flex-apply');
+            this.btnAddProperty.on('click', _.bind(this.onAddPropertyClick, this));
 
             this.rendered = true;
 
@@ -1541,8 +1624,7 @@ define([
             this.$el = $(node).html($markup);
             if (_.isUndefined(this.scroller)) {
                 this.scroller = new Common.UI.Scroller({
-                    el: this.pnlInfo,
-                    suppressScrollX: true,
+                    el: this.$el,
                     alwaysVisibleY: true
                 });
             }
@@ -1574,7 +1656,7 @@ define([
         updateScroller: function(destroy) {
             if (this.scroller) {
                 this.scroller.update(destroy ? {} : undefined);
-                this.pnlInfo.toggleClass('bordered', this.scroller.isVisible());
+                // this.pnlInfo.toggleClass('bordered', this.scroller.isVisible());
             }
         },
 
@@ -1618,15 +1700,7 @@ define([
             this.coreProps = (this.api) ? this.api.asc_getCoreProps() : null;
             if (this.coreProps) {
                 var value = this.coreProps.asc_getCreated();
-                if (value) {
-                    var lang = (this.mode.lang || 'en').replace('_', '-').toLowerCase();
-                    try {
-                        this.lblDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
-                    } catch (e) {
-                        lang = 'en';
-                        this.lblDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
-                    }
-                }
+                this.lblDate.text(this.dateToString(value));
                 this._ShowHideInfoItem(this.lblDate, !!value);
             } else if (pdfProps)
                 this.updatePdfInfo(pdfProps);
@@ -1644,16 +1718,7 @@ define([
             if (props) {
                 var visible = false;
                 value = props.asc_getModified();
-
-                if (value) {
-                    var lang = (this.mode.lang || 'en').replace('_', '-').toLowerCase();
-                    try {
-                        this.lblModifyDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
-                    } catch (e) {
-                        lang = 'en';
-                        this.lblModifyDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
-                    }
-                }
+                this.lblModifyDate.text(this.dateToString(value));
                 visible = this._ShowHideInfoItem(this.lblModifyDate, !!value) || visible;
                 value = props.asc_getLastModifiedBy();
                 if (value)
@@ -1682,6 +1747,8 @@ define([
                 this.tblAuthor.find('.close').toggleClass('hidden', !this.mode.isEdit);
                 this._ShowHideInfoItem(this.tblAuthor, this.mode.isEdit || !!this.authors.length);
             }
+
+            this.renderCustomProperties();
             this.SetDisabled();
         },
 
@@ -1694,30 +1761,14 @@ define([
 
             if (props) {
                 value = props.CreationDate;
-                if (value) {
-                    value = new Date(value);
-                    var lang = (this.mode.lang || 'en').replace('_', '-').toLowerCase();
-                    try {
-                        this.lblDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
-                    } catch (e) {
-                        lang = 'en';
-                        this.lblDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
-                    }
-                }
+                value && (value = new Date(value));
+                this.lblDate.text(this.dateToString(value));
                 this._ShowHideInfoItem(this.lblDate, !!value);
 
                 var visible = false;
                 value = props.ModDate;
-                if (value) {
-                    value = new Date(value);
-                    var lang = (this.mode.lang || 'en').replace('_', '-').toLowerCase();
-                    try {
-                        this.lblModifyDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
-                    } catch (e) {
-                        lang = 'en';
-                        this.lblModifyDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
-                    }
-                }
+                value && (value = new Date(value));
+                this.lblModifyDate.text(this.dateToString(value));
                 visible = this._ShowHideInfoItem(this.lblModifyDate, !!value) || visible;
                 visible = this._ShowHideInfoItem(this.lblModifyBy, false) || visible;
                 $('tr.divider.modify', this.el)[visible?'show':'hide']();
@@ -1817,7 +1868,7 @@ define([
         setMode: function(mode) {
             this.mode = mode;
             this.inputAuthor.setVisible(mode.isEdit);
-            this.pnlApply.toggleClass('hidden', !mode.isEdit);
+            this.btnAddProperty.setVisible(mode.isEdit);
             this.tblAuthor.find('.close').toggleClass('hidden', !mode.isEdit);
             this.inputTitle._input.attr('placeholder', mode.isEdit ? this.txtAddText : '');
             this.inputTags._input.attr('placeholder', mode.isEdit ? this.txtAddText : '');
@@ -1874,6 +1925,94 @@ define([
             this.fillDocInfo();
         },
 
+        tplCustomProperty: function(name, type, value) {
+            if (type === AscCommon.c_oVariantTypes.vtBool) {
+                value = value ? this.txtYes : this.txtNo;
+            } else if (type === AscCommon.c_oVariantTypes.vtFiletime) {
+                value = this.dateToString(new Date(value), true);
+            }
+
+            return '<tr data-custom-property>' +
+                '<td class="left"><label>' + Common.Utils.String.htmlEncode(name) + '</label></td>' +
+                '<td class="right"><div class="custom-property-wrapper">' +
+                '<input type="text" spellcheck="false" class="form-control" readonly style="width: 200px;" value="' + value +'">' +
+                '<div class="tool close img-colored" data-hint="2" data-hint-direction="right" data-hint-offset="small"></div>' +
+                '</div></td></tr>';
+        },
+
+        dateToString: function (value, hideTime) {
+            var text = '';
+            if (value) {
+                var lang = (this.mode.lang || 'en').replace('_', '-').toLowerCase();
+                try {
+                    if ( lang == 'ar-SA'.toLowerCase() ) lang = lang + '-u-nu-latn-ca-gregory';
+                    text = value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + (!hideTime ? ' ' + value.toLocaleString(lang, {timeStyle: 'short'}) : '');
+                } catch (e) {
+                    lang = 'en';
+                    text = value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + (!hideTime ? ' ' + value.toLocaleString(lang, {timeStyle: 'short'}) : '');
+                }
+            }
+            return text;
+        },
+
+        renderCustomProperties: function() {
+            if (!this.api) {
+                return;
+            }
+
+            $('tr[data-custom-property]').remove();
+
+            var properties = this.api.asc_getAllCustomProperties();
+            _.each(properties, _.bind(function(prop, idx) {
+                var me = this, name = prop.asc_getName(), type = prop.asc_getType(), value = prop.asc_getValue();
+                var $propertyEl = $(this.tplCustomProperty(name, type, value));
+
+                $('tbody.properties-tab').append($propertyEl);
+
+                $propertyEl.on('click', function (e) {
+                    if ($propertyEl.find('div.disabled').length) {
+                        return;
+                    }
+
+                    var btn = $propertyEl.find(e.target);
+                    if (btn.hasClass('close')) {
+                        me.api.asc_removeCustomProperty(idx);
+                        me.renderCustomProperties();
+                    } else if (btn.hasClass('form-control')) {
+                        (new Common.Views.DocumentPropertyDialog({
+                            title: me.txtDocumentPropertyUpdateTitle,
+                            lang: me.mode.lang,
+                            defaultValue: {
+                                name: name,
+                                type: type,
+                                value: value
+                            },
+                            nameValidator: function(newName) {
+                                if (newName !== name && _.some(properties, function (prop) { return prop.asc_getName() === newName; })) {
+                                    return me.txtPropertyTitleConflictError;
+                                }
+
+                                return true;
+                            },
+                            handler: function(result, name, type, value) {
+                                if (result === 'ok') {
+                                    me.api.asc_modifyCustomProperty(idx, name, type, value);
+                                    me.renderCustomProperties();
+                                }
+                            }
+                        })).show();
+                    }
+                });
+            }, this));
+        },
+
+        setDisabledCustomProperties: function(disable) {
+            _.each($('tr[data-custom-property]'), function(prop) {
+                $(prop).find('div.custom-property-wrapper')[disable ? 'addClass' : 'removeClass']('disabled');
+                $(prop).find('div.close')[disable ? 'hide' : 'show']();
+            })
+        },
+
         fillDocInfo:  function() {
             this.lblStatPages.text(this.infoObj.PageCount);
             this.lblStatWords.text(this.infoObj.WordsCount);
@@ -1911,19 +2050,29 @@ define([
             this.inputAuthor.setDisabled(disable);
             this.tblAuthor.find('.close').toggleClass('disabled', this._state._locked);
             this.tblAuthor.toggleClass('disabled', disable);
-            this.btnApply.setDisabled(this._state._locked);
+            this.btnAddProperty.setDisabled(disable);
+            this.setDisabledCustomProperties(disable);
         },
 
-        applySettings: function() {
-            if (this.coreProps && this.api) {
-                this.coreProps.asc_putTitle(this.inputTitle.getValue());
-                this.coreProps.asc_putKeywords(this.inputTags.getValue());
-                this.coreProps.asc_putSubject(this.inputSubject.getValue());
-                this.coreProps.asc_putDescription(this.inputComment.getValue());
-                this.coreProps.asc_putCreator(this.authors.join(';'));
-                this.api.asc_setCoreProps(this.coreProps);
-            }
-            this.menu.hide();
+        onAddPropertyClick: function() {
+            var me = this;
+            (new Common.Views.DocumentPropertyDialog({
+                lang: me.mode.lang,
+                nameValidator: function(newName) {
+                    var properties = me.api.asc_getAllCustomProperties();
+                    if (_.some(properties, function (prop) { return prop.asc_getName() === newName; })) {
+                        return me.txtPropertyTitleConflictError;
+                    }
+
+                    return true;
+                },
+                handler: function(result, title, type, value) {
+                    if (result === 'ok') {
+                        me.api.asc_addCustomProperty(title, type, value);
+                        me.renderCustomProperties();
+                    }
+                }
+            })).show();
         },
 
         txtPlacement: 'Location',
@@ -1956,7 +2105,13 @@ define([
         txtYes: 'Yes',
         txtNo: 'No',
         txtPdfProducer: 'PDF Producer',
-        txtDocumentInfo: 'Document Info'
+        txtCommon: 'Common',
+        txtStatistics: 'Statistics',
+        txtProperties: 'Properties',
+        txtDocumentInfo: 'Document Info',
+        txtDocumentPropertyUpdateTitle: "Document Property",
+        txtPropertyTitleConflictError: 'Property with this title already exists',
+        txtAddProperty: 'Add property'
 
     }, DE.Views.FileMenuPanels.DocumentInfo || {}));
 
@@ -2678,10 +2833,10 @@ define([
                     { value: 6, displayValue: ['Envelope DL', '11', '22', 'cm'], caption: 'Envelope DL', size: [110, 220]},
                     { value: 7, displayValue: ['Tabloid', '27,94', '43,18', 'cm'], caption: 'Tabloid', size: [279.4, 431.8]},
                     { value: 8, displayValue: ['A3', '29,7', '42', 'cm'], caption: 'A3', size: [297, 420]},
-                    { value: 9, displayValue: ['Tabloid Oversize', '30,48', '45,71', 'cm'], caption: 'Tabloid Oversize', size: [304.8, 457.1]},
+                    { value: 9, displayValue: ['Tabloid Oversize', '29,69', '45,72', 'cm'], caption: 'Tabloid Oversize', size: [296.9, 457.2]},
                     { value: 10, displayValue: ['ROC 16K', '19,68', '27,3', 'cm'], caption: 'ROC 16K', size: [196.8, 273]},
-                    { value: 11, displayValue: ['Envelope Choukei 3', '11,99', '23,49', 'cm'], caption: 'Envelope Choukei 3', size: [119.9, 234.9]},
-                    { value: 12, displayValue: ['Super B/A3', '33,02', '48,25', 'cm'], caption: 'Super B/A3', size: [330.2, 482.5]},
+                    { value: 11, displayValue: ['Envelope Choukei 3', '12', '23,5', 'cm'], caption: 'Envelope Choukei 3', size: [120, 235]},
+                    { value: 12, displayValue: ['Super B/A3', '30,5', '48,7', 'cm'], caption: 'Super B/A3', size: [305, 487]},
                     { value: 13, displayValue: ['A4', '84,1', '118,9', 'cm'], caption: 'A0', size: [841, 1189]},
                     { value: 14, displayValue: ['A4', '59,4', '84,1', 'cm'], caption: 'A1', size: [594, 841]},
                     { value: 16, displayValue: ['A4', '42', '59,4', 'cm'], caption: 'A2', size: [420, 594]},
@@ -2734,8 +2889,7 @@ define([
                 takeFocusOnClose: true,
                 cls: 'input-group-nr',
                 data: [
-                    { value: 0, displayValue: this.textMarginsNormal, size: [20, 30, 20, 15]},
-                    { value: 1, displayValue: this.textMarginsUsNormal, size: [25.4, 25.4, 25.4, 25.4]},
+                    { value: 0, displayValue: this.textMarginsNormal, size: (/^(ca|us)$/i.test(Common.Utils.InternalSettings.get("de-config-region"))) ? [25.4, 25.4, 25.4, 25.4] : [20, 30, 20, 15]},
                     { value: 2, displayValue: this.textMarginsNarrow, size: [12.7, 12.7, 12.7, 12.7]},
                     { value: 3, displayValue: this.textMarginsModerate, size: [25.4, 19.1, 25.4, 19.1]},
                     { value: 4, displayValue: this.textMarginsWide, size: [25.4, 50.8, 25.4, 50.8]},
@@ -2924,7 +3078,6 @@ define([
         txtPages: 'Pages',
         textMarginsLast: 'Last Custom',
         textMarginsNormal: 'Normal',
-        textMarginsUsNormal: 'US Normal',
         textMarginsNarrow: 'Narrow',
         textMarginsModerate: 'Moderate',
         textMarginsWide: 'Wide',

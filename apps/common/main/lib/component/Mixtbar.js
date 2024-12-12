@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -35,14 +35,14 @@
  *  Combined component for toolbar's and header's elements
  *
  *
- *  Created by Maxim.Kadushkin on 4/11/2017.
- *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *  Created on 4/11/2017.
  *
  */
 
 define([
     'backbone',
-    'common/main/lib/component/BaseView'
+    'common/main/lib/component/BaseView',
+    'common/main/lib/mods/transition'
 ], function (Backbone) {
     'use strict';
 
@@ -110,14 +110,14 @@ define([
                     !Common.UI.isRTL() ?
                     '<section class="tabs">' +
                         '<a class="scroll left" data-hint="0" data-hint-direction="bottom" data-hint-offset="-7, 0" data-hint-title="V"></a>' +
-                        '<ul>' +
+                        '<ul role="tablist">' +
                             '<% for(var i in items) { %>' +
                                 '<% if (typeof items[i] == "object") { %>' +
                                 '<li class="ribtab' +
                                         '<% if (items[i].haspanel===false) print(" x-lone") %>' +
                                         '<% if (items[i].extcls) print(\' \' + items[i].extcls) %>"' +
                                         '<% if (typeof items[i].layoutname == "string") print(" data-layout-name=" + \' \' +  items[i].layoutname) + \' \' %>>' +
-                                    '<a data-tab="<%= items[i].action %>" data-title="<%= items[i].caption %>" data-hint="0" data-hint-direction="bottom" data-hint-offset="small" <% if (typeof items[i].dataHintTitle !== "undefined") { %> data-hint-title="<%= items[i].dataHintTitle %>" <% } %>><%= items[i].caption %></a>' +
+                                    '<a role="tab" id="<%= items[i].action %>" data-tab="<%= items[i].action %>" data-title="<%= items[i].caption %>" data-hint="0" data-hint-direction="bottom" data-hint-offset="small" <% if (typeof items[i].dataHintTitle !== "undefined") { %> data-hint-title="<%= items[i].dataHintTitle %>" <% } %>><%= items[i].caption %></a>' +
                                 '</li>' +
                                 '<% } %>' +
                             '<% } %>' +
@@ -126,14 +126,14 @@ define([
                     '</section>' :
                     '<section class="tabs">' +
                         '<a class="scroll right" data-hint="0" data-hint-direction="bottom" data-hint-offset="-7, 0" data-hint-title="R"></a>' +
-                        '<ul>' +
+                        '<ul role="tablist">' +
                             '<% for(var i in items) { %>' +
                                 '<% if (typeof items[i] == "object") { %>' +
                                 '<li class="ribtab' +
                                         '<% if (items[i].haspanel===false) print(" x-lone") %>' +
                                         '<% if (items[i].extcls) print(\' \' + items[i].extcls) %>"' +
                                         '<% if (typeof items[i].layoutname == "string") print(" data-layout-name=" + \' \' +  items[i].layoutname) + \' \' %>>' +
-                                    '<a data-tab="<%= items[i].action %>" data-title="<%= items[i].caption %>" data-hint="0" data-hint-direction="bottom" data-hint-offset="small" <% if (typeof items[i].dataHintTitle !== "undefined") { %> data-hint-title="<%= items[i].dataHintTitle %>" <% } %>><%= items[i].caption %></a>' +
+                                    '<a role="tab" id="<%= items[i].action %>" data-tab="<%= items[i].action %>" data-title="<%= items[i].caption %>" data-hint="0" data-hint-direction="bottom" data-hint-offset="small" <% if (typeof items[i].dataHintTitle !== "undefined") { %> data-hint-title="<%= items[i].dataHintTitle %>" <% } %>><%= items[i].caption %></a>' +
                                 '</li>' +
                                 '<% } %>' +
                             '<% } %>' +
@@ -254,6 +254,7 @@ define([
                     optsFold.$bar.removeClass('expanded');
                     optsFold.$bar.find('.tabs .ribtab').removeClass('active');
                 }
+                this.fireEvent('tab:collapse');
             },
 
             expand: function() {
@@ -305,6 +306,7 @@ define([
                             me._timerSetTab = false;
                         }, 500);
                         me.setTab(tab);
+                        me.fireEvent('tab:click', [tab]);
                         // me.processPanelVisible();
                         if ( !me.isFolded ) {
                             if ( me.dblclick_timer ) clearTimeout(me.dblclick_timer);
@@ -365,7 +367,7 @@ define([
                     return config.tabs[index].action;
                 }
 
-                var _tabTemplate = _.template('<li class="ribtab" style="display: none;" <% if (typeof layoutname == "string") print(" data-layout-name=" + \' \' +  layoutname) + \' \' %>><a data-tab="<%= action %>" data-title="<%= caption %>" data-hint="0" data-hint-direction="bottom" data-hint-offset="small" <% if (typeof dataHintTitle !== "undefined") { %> data-hint-title="<%= dataHintTitle %>" <% } %> ><%= caption %></a></li>');
+                var _tabTemplate = _.template('<li class="ribtab" style="display: none;" <% if (typeof layoutname == "string") print(" data-layout-name=" + \' \' +  layoutname) + \' \' %>><a role="tab" id="<%= action %>" data-tab="<%= action %>" data-title="<%= caption %>" data-hint="0" data-hint-direction="bottom" data-hint-offset="small" <% if (typeof dataHintTitle !== "undefined") { %> data-hint-title="<%= dataHintTitle %>" <% } %> ><%= caption %></a></li>');
 
                 config.tabs[after + 1] = tab;
                 var _after_action = _get_tab_action(after);
@@ -392,24 +394,52 @@ define([
                 }
             },
 
+            getTab: function(tab) {
+                if (tab && this.$panels) {
+                    var panel = this.$panels.filter('[data-tab=' + tab + ']');
+                    return panel.length ? panel : undefined;
+                }
+            },
+
+            createTab: function(tab, visible) {
+                if (!tab.action || !tab.caption) return;
+
+                var _panel = $('<section id="' + tab.action + '" class="panel" data-tab="' + tab.action + '"></section>');
+                this.addTab(tab, _panel, this.getLastTabIdx());
+                this.setVisible(tab.action, !!visible);
+                return _panel;
+            },
+
+            getMorePanel: function(tab) {
+                return tab && btnsMore[tab] ? btnsMore[tab].panel : null;
+            },
+
+            getLastTabIdx: function() {
+                return config.tabs.length;
+            },
+
             isCompact: function () {
                 return this.isFolded;
+            },
+
+            isExpanded: function () {
+                return !this.isFolded || optsFold.$bar && optsFold.$bar.hasClass('expanded');
             },
 
             hasTabInvisible: function() {
                 if ($boxTabs.length<1) return false;
 
-                var _left_bound_ = Math.round($boxTabs.offset().left),
+                var _left_bound_ = Math.round(Common.Utils.getOffset($boxTabs).left),
                     _right_bound_ = Math.round(_left_bound_ + $boxTabs.width());
 
                 var tab = this.$tabs.filter(Common.UI.isRTL() ? ':visible:last' : ':visible:first').get(0);
                 if ( !tab ) return false;
 
-                var rect = tab.getBoundingClientRect();
+                var rect = Common.Utils.getBoundingClientRect(tab);
 
                 if ( !(Math.round(rect.left) < _left_bound_) ) {
                     tab = this.$tabs.filter(Common.UI.isRTL() ? ':visible:first' : ':visible:last').get(0);
-                    rect = tab.getBoundingClientRect();
+                    rect = Common.Utils.getBoundingClientRect(tab);
 
                     if (!(Math.round(rect.right) > _right_bound_))
                         return false;
@@ -445,6 +475,9 @@ define([
                         if ( !_btns ) {
                             _btns = [];
                             _.each($active.find('.btn-slot .x-huge'), function(item) {
+                                _btns.push($(item).closest('.btn-slot'));
+                            });
+                            btnsMore[data.tab] && btnsMore[data.tab].panel && _.each(btnsMore[data.tab].panel.find('.btn-slot .x-huge'), function(item) {
                                 _btns.push($(item).closest('.btn-slot'));
                             });
                             data.buttons = _btns;
@@ -508,7 +541,7 @@ define([
                                                 me.$boxpanels.width() - $active.outerWidth() + item.el.width());
                                         }
                                         item.el.css('width', checkedwidth ? (checkedwidth + parseFloat(item.el.css('padding-left')) + parseFloat(item.el.css('padding-right'))) + 'px' : item.width);
-                                        data.rightedge = $active.get(0).getBoundingClientRect().right;
+                                        data.rightedge = Common.Utils.getBoundingClientRect($active.get(0)).right;
                                     }
                                 }
                             }
@@ -556,7 +589,7 @@ define([
             setMoreButton: function(tab, panel) {
                 var me = this;
                 if (!btnsMore[tab]) {
-                    var top = panel.position().top;
+                    var top = Common.Utils.getPosition(panel).top;
                     var box = $('<div class="more-box" style="top:'+ top +'px;">' +
                         '<div class="separator long" style="position: relative;display: table-cell;"></div>' +
                         '<div class="group" style=""><span class="btn-slot text x-huge slot-btn-more"></span></div>' +
@@ -601,6 +634,83 @@ define([
                     var data = panel.data();
                     data.buttons = data.flex = data.rightedge = data.leftedge = undefined;
                 }
+            },
+
+            addCustomControls: function(tab, added, removed) {
+                if (!tab.action) return;
+
+                var $panel = tab.action ? this.getTab(tab.action) || this.createTab(tab, true) || this.getTab('plugins') : null,
+                    $morepanel = this.getMorePanel(tab.action),
+                    $moresection = $panel ? $panel.find('.more-box') : null,
+                    compactcls = '';
+                ($moresection.length<1) && ($moresection = null);
+                if ($panel) {
+                    if (removed) {
+                        removed.forEach(function(button, index) {
+                            if (button.cmpEl) {
+                                var group = button.cmpEl.closest('.group');
+                                button.cmpEl.closest('.btn-slot').remove();
+                                if (group.children().length<1) {
+                                    var in_more = group.closest('.more-container').length>0;
+                                    in_more ? group.next('.separator').remove() : group.prev('.separator').remove();
+                                    group.remove();
+                                    if (in_more && $morepanel.children().filter('.group').length === 0) {
+                                        btnsMore[tab.action] && btnsMore[tab.action].isActive() && btnsMore[tab.action].toggle(false);
+                                        $moresection && $moresection.css('display', "none");
+                                    }
+                                }
+                            }
+                        });
+                        $panel.find('.btn-slot:not(.slot-btn-more).x-huge').last().hasClass('compactwidth') && (compactcls = 'compactwidth');
+                    }
+                    added && added.forEach(function(button, index) {
+                        var _groups, _group;
+                        if ($morepanel) {
+                            _groups = $morepanel.children().filter('.group');
+                            if (_groups.length>0) {
+                                $moresection = null;
+                                $panel = $morepanel;
+                                compactcls = 'compactwidth';
+                            }
+                        }
+                        if (!_groups || _groups.length<1)
+                            _groups = $panel.children().filter('.group');
+
+                        if (_groups.length>0 && !button.options.separator && index>0) // add first button to new group
+                            _group = $(_groups[_groups.length-1]);
+                        else {
+                            if (button.options.separator) {
+                                var el = $('<div class="separator long"></div>');
+                                $moresection ? $moresection.before(el) : el.appendTo($panel);
+                            }
+                            _group = $('<div class="group"></div>');
+                            $moresection ? $moresection.before(_group) : _group.appendTo($panel);
+                        }
+                        var $slot = $('<span class="btn-slot text x-huge ' + (!(button.options.caption || '').trim() ? 'nocaption ' : ' ') + compactcls + '"></span>').appendTo(_group);
+                        button.render($slot);
+                    });
+                }
+                this.clearActiveData(tab.action);
+                this.processPanelVisible(null, true);
+
+                var visible = !this.isTabEmpty(tab.action) && Common.UI.LayoutManager.isElementVisible('toolbar-' + tab.action);
+                this.setVisible(tab.action, visible);
+                if (!visible && this.isTabActive(tab.action) && this.isExpanded()) {
+                    if (this.getTab('home'))
+                        this.setTab('home');
+                    else {
+                        tab = this.$tabs.siblings(':not(.x-lone):visible').first().find('> a[data-tab]').data('tab');
+                        this.setTab(tab);
+                    }
+                }
+            },
+
+            isTabEmpty: function(tab) {
+                var $panel = this.getTab(tab),
+                    $morepanel = this.getMorePanel(tab),
+                    $moresection = $panel ? $panel.find('.more-box') : null;
+                ($moresection.length<1) && ($moresection = null);
+                return $panel ? !($panel.find('> .group').length>0 || $morepanel && $morepanel.find('.group').length>0) : false;
             },
 
             resizeToolbar: function(reset) {
@@ -655,7 +765,7 @@ define([
                             if (_rightedge <= _maxright) // stop moving items
                                 break;
 
-                            var rect = item.get(0).getBoundingClientRect(),
+                            var rect = Common.Utils.getBoundingClientRect(item.get(0)),
                                 item_width = item.outerWidth(),
                                 children = item.children();
                             if (!item.attr('inner-width') && item.attr('group-state') !== 'open') {
@@ -686,7 +796,7 @@ define([
                                         hideAllMenus = true;
                                         break;
                                     } else {
-                                        var child_rect = child.get(0).getBoundingClientRect(),
+                                        var child_rect = Common.Utils.getBoundingClientRect(child.get(0)),
                                             child_width = child.outerWidth();
                                         if ((Common.UI.isRTL() ? box_controls_width - child_rect.right : child_rect.left)+child_width>_maxright) {
                                             if (!last_group) {
@@ -865,9 +975,9 @@ define([
 
             onMoreShow: function(btn, e) {
                 var moreContainer = btn.panel.parent(),
-                    parentxy = moreContainer.parent().offset(),
+                    parentxy = Common.Utils.getOffset(moreContainer.parent()),
                     target = btn.$el,
-                    showxy = target.offset(),
+                    showxy = Common.Utils.getOffset(target),
                     right = Common.Utils.innerWidth() - (showxy.left - parentxy.left + target.width()),
                     top = showxy.top - parentxy.top + target.height() + 10;
 

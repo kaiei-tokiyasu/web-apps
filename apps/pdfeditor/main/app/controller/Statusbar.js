@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,15 +34,15 @@
  *
  *  Statusbar controller
  *
- *  Created by Alexander Yuzhin on 1/15/14
- *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *  Created on 1/15/14
  *
  */
 
 define([
     'core',
     'pdfeditor/main/app/view/Statusbar',
-    'common/main/lib/util/LanguageInfo'
+    'common/main/lib/util/LanguageInfo',
+    'common/main/lib/component/InputField'
 ], function () {
     'use strict';
 
@@ -117,7 +117,7 @@ define([
 
         onChangeCompactView: function (view, status) {
             this.statusbar.setVisible(!status);
-            Common.localStorage.setBool('de-hidden-status', status);
+            Common.localStorage.setBool('pdfe-hidden-status', status);
 
             if (view.$el.closest('.btn-slot').prop('id') === 'slot-btn-options') {
                 this.statusbar.fireEvent('view:hide', [this, status]);
@@ -171,7 +171,9 @@ define([
             this.statusbar.btnZoomToWidth.toggle(type == 1, true);
             $('.statusbar #label-zoom').text(Common.Utils.String.format(this.zoomText, percent));
             if(!this._isDocReady) return;
-            Common.localStorage.setItem('pdfe-last-zoom', percent);
+            var value = type == 2 ? -1 : (type == 1 ? -2 : percent);
+            Common.localStorage.setItem('pdfe-last-zoom', value);
+            Common.Utils.InternalSettings.set('pdfe-last-zoom', value);
         },
 
         setStatusCaption: function(text, force, delay, callback) {
@@ -196,14 +198,15 @@ define([
             this.setStatusCaption('');
         },
 
-        showDisconnectTip: function () {
+        showDisconnectTip: function (text) {
             var me = this;
+            text = text || this.textDisconnect;
             if (!this.disconnectTip) {
                 var target = this.statusbar.getStatusLabel();
                 target = target.is(':visible') ? target.parent() : this.statusbar.isVisible() ? this.statusbar.$el : $(document.body);
                 this.disconnectTip = new Common.UI.SynchronizeTip({
                     target  : target,
-                    text    : this.textDisconnect,
+                    text    : text,
                     placement: 'top',
                     position: this.statusbar.isVisible() ? undefined : {bottom: 0},
                     showLink: false,
@@ -215,6 +218,8 @@ define([
                         me.disconnectTip = null;
                     }
                 });
+            } else {
+                this.disconnectTip.setText(text);
             }
             this.disconnectTip.show();
         },

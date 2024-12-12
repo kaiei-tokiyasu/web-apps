@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -30,9 +30,7 @@
  *
  */
 /**
- * User: Julia.Radzhabova
  * Date: 17.05.16
- * Time: 15:38
  */
 
 if (Common === undefined)
@@ -65,6 +63,7 @@ define([
             };
             this.lockedControls = [];
             this.pluginPanels = {};
+            this.customPluginPanels = {};
             Common.UI.BaseView.prototype.initialize.call(this, arguments);
         },
 
@@ -98,7 +97,7 @@ define([
         },
 
         getPanel: function () {
-            var _panel = $('<section id="plugins-panel" class="panel" data-tab="plugins"></section>');
+            var _panel = $('<section id="plugins-panel" class="panel" data-tab="plugins" role="tabpanel" aria-labelledby="plugins"></section>');
             var _group = $('<div class="group"></div>');
             if ( !this.storePlugins.isEmpty() ) {
                 this.storePlugins.each(function (model) {
@@ -133,7 +132,7 @@ define([
                             btn = new Common.UI.Button({
                                 cls: 'btn-toolbar x-huge icon-top',
                                 iconImg: _icon_url,
-                                caption: model.get('name'),
+                                caption: Common.Utils.String.htmlEncode(model.get('name')),
                                 menu: modes && modes.length > 1,
                                 split: modes && modes.length > 1,
                                 value: guid,
@@ -190,7 +189,7 @@ define([
             }
         },
 
-        openedPluginMode: function(pluginGuid) {
+        openedPluginMode: function(pluginGuid, insideMode) {
             // var rec = this.viewPluginsList.store.findWhere({guid: pluginGuid});
             // if ( rec ) {
             //     this.viewPluginsList.cmpEl.find('#' + rec.get('id')).parent().addClass('selected');
@@ -200,186 +199,49 @@ define([
             if ( model ) {
                 var _btn = model.get('button');
                 if (_btn) {
-                    _btn.toggle(true);
-                    this.updatePluginButton(model);
+                    if (!insideMode) {
+                        _btn.toggle(true);
+                    }
                     if (_btn.menu && _btn.menu.items.length>0) {
                         _btn.menu.items[0].setCaption(this.textStop);
+                        _btn.menu.items[0].isRun = true;
                     }
+                    _btn.options.isRun = true;
                 }
             }
         },
 
-        closedPluginMode: function(guid) {
+        closedPluginMode: function(guid, insideMode) {
             // this.viewPluginsList.cmpEl.find('.selected').removeClass('selected');
 
             var model = this.storePlugins.findWhere({guid: guid});
             if ( model ) {
                 var _btn = model.get('button');
                 if (_btn) {
-                    _btn.toggle(false);
-                    this.updatePluginButton(model);
+                    if (!insideMode) {
+                        _btn.toggle(false);
+                    }
                     if (_btn.menu && _btn.menu.items.length>0) {
                         _btn.menu.items[0].setCaption(this.textStart);
+                        _btn.menu.items[0].isRun = false;
                     }
+                    _btn.options.isRun = false;
                 }
             }
         },
 
         iconsStr2IconsObj: function(icons) {
             let result = icons;
-            if (typeof result === 'string' && result.indexOf('%') !== -1) {
-                /*
-                    valid params:
-                    theme-type - {string} theme type (light|dark|common)
-                    theme-name - {string} the name of theme
-                    state - {string} state of icons for different situations (normal|hover|active)
-                    scale - {string} list of avaliable scales (100|125|150|175|200|default|extended)
-                    extension - {string} use it after symbol "." (png|jpeg|svg)
-
-                    Example: "resources/%theme-type%(light|dark)/%state%(normal)icon%scale%(default).%extension%(png)"
-                */
-                let scaleValue = {
-                    '100%' : '.',
-                    '125%' : '@1.25x.',
-                    '150%' : '@1.5x.',
-                    '175%' : '@1.75x.',
-                    '200%' : '@2x.'
-                }
-                let arrParams = ['theme-type', 'theme-name' ,'state', 'scale', 'extension'],
-                    start = result.indexOf('%'),
-                    template = result.substring(start).replace(/[/.]/g, ('')),
-                    commonPart = result.substring(0, start),
-                    end = 0,
-                    param = null,
-                    values = null,
-                    iconName = '',
-                    tempObj = {};
-
-                result = [];
-
-                for (let index = 0; index < arrParams.length; index++) {
-                    param = arrParams[index];
-                    start = template.indexOf(param) - 1;
-                    if (start < 0 )
-                        continue;
-
-                    end = param.length + 2;
-                    template = template.substring(0, start) + template.substring(start + end);
-                    start = template.indexOf('(', 0);
-                    end = template.indexOf(')', 0);
-                    values = template.substring((start + 1), end);
-                    template = template.substring(0, start) + template.substring(++end);
-                    tempObj[param] = values.split('|');
-                }
-
-                if (template.length) {
-                    iconName = template;
-                } else {
-                    let arr = commonPart.split('/');
-                    iconName = arr.pop().replace(/\./g, '');
-                    commonPart = arr.join('/') + '/';
-                }
-
-                // we don't work with svg yet. Change it when we will work with it (extended variant).
-                if (tempObj['scale'] && (tempObj['scale'] == 'default' || tempObj['scale'] == 'extended') ) {
-                    tempObj['scale'] = ['100', '125', '150', '175', '200'];
-                } else if (!tempObj['scale']) {
-                    tempObj['scale'] = ['100'];
-                }
-
-                if (!tempObj['state']) {
-                    tempObj['state'] = ['normal'];
-                }
-
-                if (!iconName) {
-                    iconName = 'icon';
-                }
-
-                let bHasName = !!tempObj['theme-name'];
-                let bHasType = (tempObj['theme-type'] && tempObj['theme-type'][0] !== 'common');
-                let arrThemes = bHasName ? tempObj['theme-name'] : (bHasType ? tempObj['theme-type'] : []);
-                let paramName = bHasName ? 'theme' : 'style';
-                if (arrThemes.length) {
-                    for (let thInd = 0; thInd < arrThemes.length; thInd++) {
-                        let obj = {};
-                        obj[paramName] = arrThemes[thInd];
-                        result.push(obj);
-                    }
-                } else {
-                    result.push({});
-                }
-
-                for (let index = 0; index < result.length; index++) {
-                    for (let scaleInd = 0; scaleInd < tempObj['scale'].length; scaleInd++) {
-                        let themePath = (result[index][paramName] || 'img') + '/';
-                        let scale = tempObj['scale'][scaleInd] + '%';
-                        let obj = {};
-                        for (let stateInd = 0; stateInd < tempObj['state'].length; stateInd++) {
-                            let state = tempObj['state'][stateInd];
-                            obj[state] = commonPart + themePath + (state == 'normal' ? '' : (state + '_')) + iconName + (scaleValue[scale] || '.') + tempObj['extension'][0];
-                        }
-                        result[index][scale] = obj;
-                    }
-                }
+            if (typeof result === 'string') {
+                if (result.indexOf('%') === -1)
+                    return [icons, icons];
+                return Common.UI.iconsStr2IconsObj(icons);
             }
             return result;
         },
 
         parseIcons: function(icons) {
-            icons = this.iconsStr2IconsObj(icons);
-            if (icons.length && typeof icons[0] !== 'string') {
-                var theme = Common.UI.Themes.currentThemeId().toLowerCase(),
-                    style = Common.UI.Themes.isDarkTheme() ? 'dark' : 'light',
-                    idx = -1;
-                for (var i=0; i<icons.length; i++) {
-                    if (icons[i].theme && icons[i].theme.toLowerCase() == theme) {
-                        idx = i;
-                        break;
-                    }
-                }
-                if (idx<0)
-                    for (var i=0; i<icons.length; i++) {
-                        if (icons[i].style && icons[i].style.toLowerCase() == style) {
-                            idx = i;
-                            break;
-                        }
-                    }
-                (idx<0) && (idx = 0);
-
-                var ratio = Common.Utils.applicationPixelRatio()*100,
-                    current = icons[idx],
-                    bestDistance = 10000,
-                    currentDistance = 0,
-                    defUrl,
-                    bestUrl;
-                for (var key in current) {
-                    if (current.hasOwnProperty(key)) {
-                        if (key=='default') {
-                            defUrl = current[key];
-                        } else if (!isNaN(parseInt(key))) {
-                            currentDistance = Math.abs(ratio-parseInt(key));
-                            if (currentDistance < (bestDistance - 0.01))
-                            {
-                                bestDistance = currentDistance;
-                                bestUrl = current[key];
-                            }
-                        }
-                    }
-                }
-                (bestDistance>0.01 && defUrl) && (bestUrl = defUrl);
-                return {
-                    'normal': bestUrl ? bestUrl['normal'] : '',
-                    'hover': bestUrl ? bestUrl['hover'] || bestUrl['normal'] : '',
-                    'active': bestUrl ? bestUrl['active'] || bestUrl['normal'] : ''
-                };
-            } else { // old version
-                var url = icons[((Common.Utils.applicationPixelRatio() > 1 && icons.length > 1) ? 1 : 0) + (icons.length > 2 ? 2 : 0)];
-                return {
-                    'normal': url,
-                    'hover': url,
-                    'active': url
-                };
-            }
+            return Common.UI.getSuitableIcons(this.iconsStr2IconsObj(icons)); // TODO: fix format for icons string and use Common.UI.iconsStr2IconsObj
         },
 
         updatePluginIcons: function(model) {
@@ -388,21 +250,16 @@ define([
 
             var modes = model.get('variations'),
                 icons = modes[model.get('currentVariation')].get('icons');
+            if (icons === '') return;
             model.set('parsedIcons', this.parseIcons(icons));
             this.updatePluginButton(model);
         },
 
         updatePluginButton: function(model) {
-            if (!model.get('visible'))
+            if (!model.get('visible') || !model.get('parsedIcons'))
                 return null;
-
-            var btn = model.get('button'),
-                menuItem = model.get('backgroundPlugin');
-            if (menuItem && menuItem.cmpEl) {
-                menuItem.cmpEl.find("img").attr("src", model.get('baseUrl') + model.get('parsedIcons')['normal']);
-            } else if (btn && btn.cmpEl) {
-                btn.cmpEl.find(".inner-box-icon img").attr("src", model.get('baseUrl') + model.get('parsedIcons')[btn.isActive() ? 'active' : 'normal']);
-            }
+            var menuItem = model.get('backgroundPlugin');
+            menuItem && menuItem.cmpEl && menuItem.cmpEl.find("img").attr("src", model.get('baseUrl') + model.get('parsedIcons')['normal']);
         },
 
         createBackgroundPluginsButton: function () {
@@ -441,26 +298,33 @@ define([
             var modes = model.get('variations'),
                 guid = model.get('guid'),
                 icons = modes[model.get('currentVariation')].get('icons'),
-                parsedIcons = this.parseIcons(icons),
-                icon_url = model.get('baseUrl') + parsedIcons['normal'];
-            model.set('parsedIcons', parsedIcons);
+                icon_cls;
+            if (icons === '') {
+                icon_cls = 'toolbar__icon btn-plugin-default'
+            } else {
+                model.set('parsedIcons', this.parseIcons(icons));
+            }
             var _menu_items = [];
             _.each(model.get('variations'), function(variation, index) {
                 if (variation.get('visible'))
                     _menu_items.push({
                         caption     : index > 0 ? variation.get('description') : me.textStart,
-                        value       : parseInt(variation.get('index'))
+                        value       : parseInt(variation.get('index')),
+                        isRun       : false
                     });
             });
 
             var _set = Common.enumLock;
-            var btn = new Common.UI.Button({
+            var btn = new Common.UI.ButtonCustom({
                 cls: 'btn-toolbar x-huge icon-top',
-                iconImg: icon_url,
-                caption: model.get('name'),
+                iconCls: icon_cls,
+                iconsSet: this.iconsStr2IconsObj(icons),
+                baseUrl: model.get('baseUrl'), // icons have a relative path, so need to use the base url
+                caption: Common.Utils.String.htmlEncode(model.get('name')),
                 menu: _menu_items.length > 1,
                 split: _menu_items.length > 1,
                 value: guid,
+                isRun: false,
                 hint: model.get('name'),
                 lock: model.get('isDisplayedInViewer') ? [_set.viewMode, _set.previewReviewMode, _set.viewFormMode, _set.selRangeEdit, _set.editFormula] : [_set.viewMode, _set.previewReviewMode, _set.viewFormMode, _set.docLockView, _set.docLockForms, _set.docLockComments, _set.selRangeEdit, _set.editFormula ],
                 dataHint: '1',
@@ -477,12 +341,12 @@ define([
                 );
 
                 btn.menu.on('item:click', function(menu, item, e) {
-                    me.fireEvent('plugin:select', [menu.options.pluginGuid, item.value]);
+                    me.fireEvent('plugin:select', [menu.options.pluginGuid, item.value, item.isRun, item.value === 0 && item.isRun]);
                 });
             }
 
             btn.on('click', function(b, e) {
-                me.fireEvent('plugin:select', [b.options.value, 0]);
+                me.fireEvent('plugin:select', [b.options.value, 0, btn.options.isRun]);
             });
 
             model.set('button', btn);
@@ -495,18 +359,23 @@ define([
             this.fireEvent('hide', this );
         },
 
-        showPluginPanel: function (show, guid) {
-            var model = this.storePlugins.findWhere({guid: guid}),
-                menu = model.get('menu');
+        showPluginPanel: function (show, id) {
+            var panel = this.pluginPanels[id] ? this.pluginPanels[id] : this.customPluginPanels[id],
+                menu = this.pluginPanels[id] ? this.storePlugins.findWhere({guid: id}).get('menu') : panel.menu;
             if (show) {
                 for (var key in this.pluginPanels) {
                     if (this.pluginPanels[key].menu === menu) {
                         this.pluginPanels[key].$el.removeClass('active');
                     }
                 }
-                this.pluginPanels[guid].$el.addClass('active');
+                for (var key in this.customPluginPanels) {
+                    if (this.customPluginPanels[key].menu === menu) {
+                        this.customPluginPanels[key].$el.removeClass('active');
+                    }
+                }
+                panel.$el.addClass('active');
             } else {
-                this.pluginPanels[guid].$el.removeClass('active');
+                panel.$el.removeClass('active');
                 this.fireEvent(menu === 'right' ? 'pluginsright:hide' : 'pluginsleft:hide', this);
             }
             //this.updateLeftPluginButton(guid);

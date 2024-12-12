@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,8 +34,7 @@
  *
  *  View
  *
- *  Created by Julia.Radzhabova on 05.08.15
- *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *  Created on 05.08.15
  *
  */
 
@@ -65,7 +64,8 @@ define([
         viewFormMode:   'view-form-mode', // view form mode on Forms tab
         viewMode:       'view-mode', // view mode on disconnect, version history etc (used for locking buttons not in toolbar) or view mode from header mode button (for toolbar)
         hideComments:   'hide-comments', // no live comments and left panel is closed
-        cantShare: 'cant-share'
+        cantShare: 'cant-share',
+        customLock: 'custom-lock' // for custom buttons in toolbar
     };
     for (var key in enumLock) {
         if (enumLock.hasOwnProperty(key)) {
@@ -75,7 +75,7 @@ define([
 
     Common.Views.ReviewChanges = Common.UI.BaseView.extend(_.extend((function(){
         var template =
-            '<section id="review-changes-panel" class="panel" data-tab="review">' +
+            '<section id="review-changes-panel" class="panel" data-tab="review" role="tabpanel" aria-labelledby="review">' +
                 '<div class="group no-group-mask review">' +
                     '<span id="slot-btn-sharing" class="btn-slot text x-huge"></span>' +
                     '<span id="slot-btn-coauthmode" class="btn-slot text x-huge"></span>' +
@@ -282,6 +282,7 @@ define([
                         split: !this.appConfig.canUseReviewPermissions,
                         iconCls: 'toolbar__icon btn-review-save',
                         lock: [_set.reviewChangelock, _set.isReviewOnly, _set.previewReviewMode, _set.viewFormMode, _set.lostConnect, _set.docLockView, _set.docLockForms, _set.docLockComments, _set.docLockReview, _set.viewMode],
+                        action: 'review-accept',
                         dataHint: '1',
                         dataHintDirection: 'bottom',
                         dataHintOffset: 'small'
@@ -294,6 +295,7 @@ define([
                         split: !this.appConfig.canUseReviewPermissions,
                         iconCls: 'toolbar__icon btn-review-deny',
                         lock: [_set.reviewChangelock, _set.isReviewOnly, _set.previewReviewMode, _set.viewFormMode, _set.lostConnect, _set.docLockView, _set.docLockForms, _set.docLockComments, _set.docLockReview, _set.viewMode],
+                        action: 'review-reject',
                         dataHint: '1',
                         dataHintDirection: 'bottom',
                         dataHintOffset: 'small'
@@ -307,6 +309,7 @@ define([
                             split: true,
                             iconCls: 'toolbar__icon btn-compare',
                             lock: [_set.hasCoeditingUsers, _set.previewReviewMode, _set.viewFormMode, _set.lostConnect, _set.docLockView, _set.docLockForms, _set.docLockComments, _set.viewMode],
+                            action: 'compare-document',
                             dataHint: '1',
                             dataHintDirection: 'bottom',
                             dataHintOffset: 'small'
@@ -319,6 +322,7 @@ define([
                             split: true,
                             iconCls: 'toolbar__icon btn-combine',
                             lock: [_set.hasCoeditingUsers, _set.previewReviewMode, _set.viewFormMode, _set.lostConnect, _set.docLockView, _set.docLockForms, _set.docLockComments, _set.viewMode],
+                            action: 'combine-document',
                             dataHint: '1',
                             dataHintDirection: 'bottom',
                             dataHintOffset: 'small'
@@ -331,6 +335,7 @@ define([
                         lock: [_set.previewReviewMode, _set.viewFormMode, _set.lostConnect, _set.docLockView, _set.docLockForms, _set.docLockComments, _set.docLockReview, _set.viewMode],
                         caption: this.txtTurnon,
                         split: !this.appConfig.isReviewOnly,
+                        action: 'track-changes',
                         enableToggle: true,
                         dataHint: '1',
                         dataHintDirection: 'bottom',
@@ -413,6 +418,7 @@ define([
                                     }
                                 ]
                             }),
+                            action: 'review-display-mode',
                             dataHint: '1',
                             dataHintDirection: 'bottom',
                             dataHintOffset: 'small'
@@ -441,6 +447,7 @@ define([
                         lock: [_set.viewFormMode, _set.lostConnect, _set.docLockView, _set.viewMode],
                         caption: this.txtCoAuthMode,
                         menu: true,
+                        action: 'co-edit-mode',
                         dataHint: '1',
                         dataHintDirection: 'bottom',
                         dataHintOffset: 'small'
@@ -485,7 +492,8 @@ define([
                         caption: this.txtCommentRemove,
                         split: true,
                         iconCls: 'toolbar__icon btn-rem-comment',
-                        lock: [_set.previewReviewMode, _set.viewFormMode, _set.hideComments, _set['Objects'], _set.lostConnect, _set.docLockView, _set.docLockForms, _set.viewMode],
+                        lock: [_set.previewReviewMode, _set.viewFormMode, _set.hideComments, _set['Objects'], _set.lostConnect, _set.docLockView, _set.docLockForms, _set.viewMode, _set.slideMasterMode],
+                        action: 'comment-remove',
                         dataHint: '1',
                         dataHintDirection: 'bottom',
                         dataHintOffset: 'small'
@@ -496,7 +504,8 @@ define([
                         caption: this.txtCommentResolve,
                         split: true,
                         iconCls: 'toolbar__icon btn-resolve-all',
-                        lock: [_set.previewReviewMode, _set.viewFormMode, _set.hideComments, _set['Objects'], _set.lostConnect, _set.docLockView, _set.docLockForms, _set.viewMode],
+                        lock: [_set.previewReviewMode, _set.viewFormMode, _set.hideComments, _set['Objects'], _set.lostConnect, _set.docLockView, _set.docLockForms, _set.viewMode, _set.slideMasterMode],
+                        action: 'comment-resolve',
                         dataHint: '1',
                         dataHintDirection: 'bottom',
                         dataHintOffset: 'small'
@@ -520,11 +529,13 @@ define([
                                 {caption: this.mniMMFromUrl, value: 'url'},
                                 {caption: this.mniMMFromStorage, value: 'storage'}
                             ]
-                        })
+                        }),
+                        action: 'mail-merge'
                     });
                     this.mnuMailRecepients = this.btnMailRecepients.menu;
                     this.lockedControls.push(this.btnMailRecepients);
                 }
+                Common.UI.LayoutManager.addControls(this.lockedControls);
             },
 
             render: function (el) {
@@ -768,7 +779,12 @@ define([
                     if ((!me.btnMailRecepients || !Common.UI.LayoutManager.isElementVisible('toolbar-collaboration-mailmerge')) && separator_last)
                         me.$el.find(separator_last).hide();
 
-                    Common.NotificationCenter.trigger('tab:visible', 'review', (config.isEdit || config.canViewReview || me.canComments) && Common.UI.LayoutManager.isElementVisible('toolbar-collaboration'));
+                    var visible = (config.isEdit || config.canViewReview || me.canComments) && Common.UI.LayoutManager.isElementVisible('toolbar-collaboration');
+                    Common.NotificationCenter.trigger('tab:visible', 'review', visible);
+                    if (Common.Utils.InternalSettings.get('toolbar-active-tab') && visible) { // collaboration tab has hign priority in view mode
+                        Common.Utils.InternalSettings.set('toolbar-active-tab', null);
+                        Common.NotificationCenter.trigger('tab:set-active', 'review');
+                    }
                     setEvents.call(me);
                 });
             },
@@ -842,6 +858,7 @@ define([
                                 toggleGroup: 'menuTurnReviewStb'
                             }
                         ]}),
+                        action: 'track-changes',
                         dataHint: '0',
                         dataHintDirection: 'top',
                         dataHintOffset: '2, -16'
@@ -849,6 +866,7 @@ define([
 
                     this.btnsTurnReview.push(button);
                     this.lockedControls.push(button);
+                    Common.UI.LayoutManager.addControls(button);
                     return button;
                 } else
                 if ( type == 'spelling' ) {
@@ -866,6 +884,7 @@ define([
                     });
                     this.btnsSpelling.push(button);
                     this.lockedControls.push(button);
+                    Common.UI.LayoutManager.addControls(button);
                     return button;
                 } else if (type == 'doclang' && parent == 'statusbar' ) {
                     button = new Common.UI.Button({
@@ -880,6 +899,7 @@ define([
                     });
                     this.btnsDocLang.push(button);
                     this.lockedControls.push(button);
+                    Common.UI.LayoutManager.addControls(button);
                     Common.Utils.lockControls(Common.enumLock.noSpellcheckLangs, true, {array: [button]});
                     return button;
                 }

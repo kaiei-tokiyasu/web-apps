@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -42,13 +42,15 @@ define([
         render: function(parentEl) {
             Common.UI.Button.prototype.render.call(this, parentEl);
 
-            if (/huge/.test(this.options.cls) &&  this.options.split === true ) {
+            // options.colorLine: true/false/'line'/'box'
+            var colorLineCls = this.options.colorLine==='box' ? 'btn-color-value-box' : 'btn-color-value-line';
+            if (/huge/.test(this.options.cls) &&  this.options.split === true && (this.options.colorLine!==false)) {
                 var btnEl = $('button', this.cmpEl),
                     btnMenuEl = $(btnEl[1]);
-                btnMenuEl && btnMenuEl.append( $('<div class="btn-color-value-line"></div>'));
-            } else
-                $('button:first-child', this.cmpEl).append( $('<div class="btn-color-value-line"></div>'));
-            this.colorEl = this.cmpEl.find('.btn-color-value-line');
+                btnMenuEl && btnMenuEl.append( $('<div class="' + colorLineCls + '"></div>'));
+            } else if ((this.options.colorLine!==false))
+                $('button:first-child', this.cmpEl).append( $('<div class="' + colorLineCls + '"></div>'));
+            this.colorEl = this.cmpEl.find('.' + colorLineCls);
 
             if (this.options.auto)
                 this.autocolor = (typeof this.options.auto == 'object') ? this.options.auto.color || '000000' : '000000';
@@ -69,6 +71,7 @@ define([
                 (this.options.themecolors!==undefined) && (config['themecolors'] = this.options.themecolors);
                 (this.options.effects!==undefined) && (config['effects'] = this.options.effects);
                 (this.options.colorHints!==undefined) && (config['colorHints'] = this.options.colorHints);
+                (this.options.paletteCls!==undefined) && (config['cls'] = this.options.paletteCls);
 
                 this.colorPicker = new Common.UI.ThemeColorPalette(config);
                 this.colorPicker.on('select', _.bind(this.onColorSelect, this));
@@ -95,6 +98,7 @@ define([
             if (typeof this.menu !== 'object') {
                 options = options || this.options;
                 var height = options.paletteHeight ? options.paletteHeight + 'px' : 'auto',
+                    width = options.paletteWidth ? options.paletteWidth + 'px' : '164px',
                     id = Common.UI.getId(),
                     auto = [],
                     eyedropper = [];
@@ -119,22 +123,22 @@ define([
                     id: id,
                     cls: 'color-menu ' + (options.eyeDropper ? 'shifted-right' : 'shifted-left'),
                     additionalAlign: options.additionalAlign,
-                    items: (options.additionalItems ? options.additionalItems : []).concat(auto).concat([
-                        { template: _.template('<div id="' + id + '-color-menu" style="width: 164px; height:' + height + '; display: inline-block;"></div>') },
+                    items: (options.additionalItemsBefore ? options.additionalItemsBefore : []).concat(auto).concat([
+                        { template: _.template('<div id="' + id + '-color-menu" style="width: ' + width + '; height:' + height + '; display: inline-block;"></div>') },
                         {caption: '--'}
                         ]).concat(eyedropper).concat([
                         {
                             id: id + '-color-new',
                             template: _.template('<a tabindex="-1" type="menuitem" style="">' + this.textNewColor + '</a>')
                         }
-                    ])
+                    ]).concat(options.additionalItemsAfter ? options.additionalItemsAfter : [])
                 });
                 this.initInnerMenu();
                 var me = this;
                 menu.on('show:after', function(menu) {
                     me.colorPicker && _.delay(function() {
                         me.colorPicker.showLastSelected();
-                        !(options.additionalItems || options.auto) && me.colorPicker.focus();
+                        !(options.additionalItemsBefore || options.auto) && me.colorPicker.focus();
                     }, 10);
                 });
                 return menu;
@@ -145,7 +149,7 @@ define([
         initInnerMenu: function() {
             if (!this.colorPicker || typeof this.menu !== 'object') return;
 
-            var index = (this.options.additionalItems || []).length + (this.options.auto ? 2 : 0);
+            var index = (this.options.additionalItemsBefore || []).length + (this.options.auto ? 2 : 0);
             this.colorPicker.outerMenu = {menu: this.menu, index: index};
             this.menu.setInnerMenu([{menu: this.colorPicker, index: index}]);
         },
@@ -176,7 +180,7 @@ define([
 
             if (this.colorEl) {
                 this.colorEl.css({'background-color': (color=='transparent') ? color : ((typeof(color) == 'object') ? '#'+color.color : '#'+color)});
-                this.colorEl.toggleClass('bordered', color=='transparent');
+                this.colorEl.toggleClass('bordered', color=='transparent' || this.options.colorLine==='box');
             }
         },
 
@@ -279,6 +283,9 @@ define([
 
             if (this.options.color!==undefined)
                 this.setColor(this.options.color);
+
+            if (this.options.ariaLabel)
+                $('button', this.cmpEl).attr('aria-label', this.options.ariaLabel);
         },
 
         setColor: function(color) {

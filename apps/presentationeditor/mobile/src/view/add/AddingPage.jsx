@@ -1,6 +1,7 @@
 import React, { useContext, useEffect } from 'react';
 import { Page, Navbar, NavRight, NavTitle, Link, Icon, Tabs, Tab, f7 } from 'framework7-react';
 import { useTranslation } from 'react-i18next';
+import { observer, inject } from "mobx-react";
 import { Device } from '../../../../../common/mobile/utils/device';
 import AddSlideController from "../../controller/add/AddSlide";
 import AddShapeController from "../../controller/add/AddShape";
@@ -41,10 +42,12 @@ const AddLayoutContent = ({ tabs }) => {
     )
 };
 
-const AddingPage = () => {
+const AddingPage = inject("storeApplicationSettings")(observer(props => {
     const { t } = useTranslation();
     const _t = t('View.Add', {returnObjects: true});
     const api = Common.EditorApi.get();
+    const storeApplicationSettings = props.storeApplicationSettings;
+    const directionMode = storeApplicationSettings.directionMode;
     const countPages = api.getCountPages();
     const mainContext = useContext(MainContext);
     const showPanels = mainContext.showPanels;
@@ -53,6 +56,12 @@ const AddingPage = () => {
     useEffect(() => {
         f7.tab.show('#add-other', false);
     }, []);
+
+    useEffect(() => {
+        if(directionMode === 'rtl') {
+            tabs.reverse();
+        }
+    }, [directionMode])
     
     if (!showPanels && countPages) {
         tabs.push({
@@ -107,6 +116,6 @@ const AddingPage = () => {
             <AddLayoutContent tabs={tabs} />
         </Page>
     )
-};
+}));
 
 export default AddingPage;

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -33,14 +33,13 @@
  *
  *  WatchDialog.js
  *
- *  Created by Julia.Radzhabova on 24.06.22
- *  Copyright (c) 2022 Ascensio System SIA. All rights reserved.
+ *  Created on 24.06.22
  *
  */
 
-define([  'text!spreadsheeteditor/main/app/template/WatchDialog.template',
+define([
+    'text!spreadsheeteditor/main/app/template/WatchDialog.template',
     'common/main/lib/view/AdvancedSettingsWindow',
-    'common/main/lib/component/ListView'
 ], function (contentTemplate) {
     'use strict';
 
@@ -226,9 +225,9 @@ define([  'text!spreadsheeteditor/main/app/template/WatchDialog.template',
                     me.show();
                 });
 
-                var xy = me.$window.offset();
+                var xy = Common.Utils.getOffset(me.$window);
                 me.hide();
-                win.show(xy.left + 65, xy.top + 77);
+                win.show(me.$window, xy);
                 win.setSettings({
                     api     : me.api,
                     range   : me.api.asc_getEscapeSheetName(me.api.asc_getWorksheetName(me.api.asc_getActiveWorksheetIndex())) + '!' + me.api.asc_getActiveRangeStr(Asc.referenceType.A),

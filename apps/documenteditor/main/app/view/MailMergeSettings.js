@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -30,7 +30,6 @@
  *
  */
 /**
- * User: Julia.Radzhabova
  * Date: 20.02.15
  */
 
@@ -40,10 +39,7 @@ define([
     'underscore',
     'backbone',
     'common/main/lib/component/Button',
-    'common/main/lib/component/CheckBox',
-    'common/main/lib/view/SaveAsDlg',
-    'common/main/lib/view/SelectFileDlg',
-    'documenteditor/main/app/view/MailMergeEmailDlg'
+    'common/main/lib/component/CheckBox'
 ], function (menuTemplate, $, _, Backbone) {
     'use strict';
 
@@ -479,6 +475,7 @@ define([
         },
 
         onEditData: function() {
+            if (!Common.Controllers.LaunchController.isScriptLoaded()) return;
             var mergeEditor = DE.getController('Common.Controllers.ExternalMergeEditor').getView('Common.Views.ExternalMergeEditor');
             if (mergeEditor) {
                 mergeEditor.show();
@@ -855,7 +852,9 @@ define([
                 documentHolder: {clear: false, disable: true},
                 toolbar: true,
                 plugins: false,
-                protect: false
+                protect: false,
+                header: {docmode: true, search: false},
+                shortcuts: false
             }, 'mailmerge');
 
             this.lockControls(DE.enumLockMM.preview, disable, {array: [this.btnInsField, this.btnEditData]});

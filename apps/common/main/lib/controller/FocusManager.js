@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -32,8 +32,7 @@
 /**
  *  FocusManager.js
  *
- *  Created by Julia Radzhabova on 24.09.2020
- *  Copyright (c) 2020 Ascensio System SIA. All rights reserved.
+ *  Created on 24.09.2020
  *
  */
 
@@ -66,9 +65,9 @@ Common.UI.FocusManager = new(function() {
                         item.selector = '.listview';
                     else if (field instanceof Common.UI.CheckBox)
                         item.selector = '.checkbox-indeterminate';
-                    else if (field instanceof Common.UI.RadioBox)
+                    else if (Common.UI.RadioBox && field instanceof Common.UI.RadioBox)
                         item.selector = '.radiobox';
-                    else if (field instanceof Common.UI.TreeView)
+                    else if (Common.UI.TreeView && field instanceof Common.UI.TreeView)
                         item.selector = '.treeview';
                     else if (field instanceof Common.UI.Button)
                         item.selector = field.split ? '.btn-group' : 'button';

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -32,8 +32,7 @@
 /**
  *  FormulaTab.js
  *
- *  Created by Julia Radzhabova on 14.06.2019
- *  Copyright (c) 2019 Ascensio System SIA. All rights reserved.
+ *  Created on 14.06.2019
  *
  */
 
@@ -113,6 +112,7 @@ define([
                     hint: formulaDialog.sCategoryFinancial,
                     menu: true,
                     split: false,
+                    action: 'formula-financial',
                     disabled: true,
                     lock: [_set.editText, _set.selChart, _set.selChartText, _set.selShape, _set.selShapeText, _set.selImage, _set.selSlicer, _set.selRangeEdit, _set.lostConnect, _set.coAuth, _set.noSubitems, _set.userProtected],
                     dataHint: '1',
@@ -131,6 +131,7 @@ define([
                     menu: true,
                     split: false,
                     disabled: true,
+                    action: 'formula-logical',
                     lock: [_set.editText, _set.selChart, _set.selChartText, _set.selShape, _set.selShapeText, _set.selImage, _set.selSlicer, _set.selRangeEdit, _set.lostConnect, _set.coAuth, _set.noSubitems, _set.userProtected],
                     dataHint: '1',
                     dataHintDirection: 'bottom',
@@ -147,6 +148,7 @@ define([
                     hint: formulaDialog.sCategoryTextAndData,
                     menu: true,
                     split: false,
+                    action: 'formula-textdata',
                     disabled: true,
                     lock: [_set.editText, _set.selChart, _set.selChartText, _set.selShape, _set.selShapeText, _set.selImage, _set.selSlicer, _set.selRangeEdit, _set.lostConnect, _set.coAuth, _set.noSubitems, _set.userProtected],
                     dataHint: '1',
@@ -164,6 +166,7 @@ define([
                     hint: formulaDialog.sCategoryDateAndTime,
                     menu: true,
                     split: false,
+                    action: 'formula-datetime',
                     disabled: true,
                     lock: [_set.editText, _set.selChart, _set.selChartText, _set.selShape, _set.selShapeText, _set.selImage, _set.selSlicer, _set.selRangeEdit, _set.lostConnect, _set.coAuth, _set.noSubitems, _set.userProtected],
                     dataHint: '1',
@@ -181,6 +184,7 @@ define([
                     hint: formulaDialog.sCategoryLookupAndReference,
                     menu: true,
                     split: false,
+                    action: 'formula-reference',
                     disabled: true,
                     lock: [_set.editText, _set.selChart, _set.selChartText, _set.selShape, _set.selShapeText, _set.selImage, _set.selSlicer, _set.selRangeEdit, _set.lostConnect, _set.coAuth, _set.noSubitems, _set.userProtected],
                     dataHint: '1',
@@ -198,6 +202,7 @@ define([
                     hint: formulaDialog.sCategoryMathematic,
                     menu: true,
                     split: false,
+                    action: 'formula-math',
                     disabled: true,
                     lock: [_set.editText, _set.selChart, _set.selChartText, _set.selShape, _set.selShapeText, _set.selImage, _set.selSlicer, _set.selRangeEdit, _set.lostConnect, _set.coAuth, _set.noSubitems, _set.userProtected],
                     dataHint: '1',
@@ -215,6 +220,7 @@ define([
                     hint: this.txtRecent,
                     menu: true,
                     split: false,
+                    action: 'formula-recent',
                     disabled: true,
                     lock: [_set.editText, _set.selChart, _set.selChartText, _set.selShape, _set.selShapeText, _set.selImage, _set.selSlicer, _set.selRangeEdit, _set.lostConnect, _set.coAuth, _set.noSubitems, _set.userProtected],
                     dataHint: '1',
@@ -231,6 +237,7 @@ define([
                     caption: this.txtAutosum,
                     hint: [this.txtAutosumTip + Common.Utils.String.platformKey('Alt+='), this.txtFormulaTip + Common.Utils.String.platformKey('Shift+F3')],
                     split: true,
+                    action: 'autosum',
                     disabled: true,
                     lock: [_set.editText, _set.selChart, _set.selChartText, _set.selShape, _set.selShapeText, _set.selImage, _set.selSlicer, _set.selRangeEdit, _set.lostConnect, _set.coAuth, _set.userProtected],
                     menu: new Common.UI.Menu({
@@ -278,6 +285,7 @@ define([
                     hint: this.txtMore,
                     menu: true,
                     split: false,
+                    action: 'formula-more',
                     disabled: true,
                     lock: [_set.editText, _set.selChart, _set.selChartText, _set.selShape, _set.selShapeText, _set.selImage, _set.selSlicer, _set.selRangeEdit, _set.lostConnect, _set.coAuth, _set.noSubitems, _set.userProtected],
                     dataHint: '1',
@@ -294,6 +302,7 @@ define([
                     caption: this.txtCalculation,
                     split: true,
                     menu: true,
+                    action: 'calculate',
                     disabled: true,
                     lock: [_set.editCell, _set.selRangeEdit, _set.lostConnect, _set.coAuth],
                     dataHint: '1',
@@ -331,6 +340,7 @@ define([
                             }
                         ]
                     }),
+                    action: 'named-ranges',
                     dataHint: '1',
                     dataHintDirection: 'bottom',
                     dataHintOffset: 'small'
@@ -403,7 +413,7 @@ define([
                     dataHintOffset: 'medium'
                 });
                 this.lockedControls.push(this.btnShowFormulas);
-
+                Common.UI.LayoutManager.addControls(this.lockedControls);
                 Common.NotificationCenter.on('app:ready', this.onAppReady.bind(this));
             },
 
@@ -542,22 +552,42 @@ define([
                     formulaDialog = SSE.getController('FormulaDialog'),
                     group = me.formulasGroups.findWhere({name : name});
 
-                if (group) {
-                    var functions = group.get('functions');
+                    var functions = group ? group.get('functions') : [];
                     functions && functions.forEach(function(item) {
                         arr.push(new Common.UI.MenuItem({
                             caption: item.get('name'),
                             value: item.get('origin')
                         }));
                     });
-                    if (arr.length) {
-                        var mnu = new Common.UI.MenuItem({
-                            caption : formulaDialog['sCategory' + name] || name,
+                    var btn = this.btnMore,
+                        mnu;
+                    if (btn.menu && btn.menu.rendered) {
+                        for (var i = 0; i < btn.menu.getItemsLength(true); i++) {
+                            if (btn.menu.items[i].options.value===name) {
+                                mnu = btn.menu.items[i];
+                                break;
+                            }
+                        }
+                    }
+                    if (mnu) {
+                        var menu = mnu.menu._innerMenu;
+                        if (menu) {
+                            menu.removeAll();
+                            arr.forEach(function(item){
+                                menu.addItem(item);
+                            });
+                        }
+                        mnu.setVisible(arr.length>0);
+                    } else {
+                        mnu = new Common.UI.MenuItem({
+                            caption: formulaDialog['sCategory' + name] || name,
+                            value: name,
+                            visible: arr.length>0,
                             menu: new Common.UI.Menu({
                                 menuAlign: 'tl-tr',
                                 items: [
-                                    {template: _.template('<div id="id-toolbar-formula-menu-'+ name +'" style="display: flex;" class="open"></div>')},
-                                    { caption: '--' },
+                                    {template: _.template('<div id="id-toolbar-formula-menu-' + name + '" style="display: flex;" class="open"></div>')},
+                                    {caption: '--'},
                                     {
                                         caption: me.txtAdditional,
                                         value: 'more',
@@ -572,17 +602,17 @@ define([
                         mnu.menu.on('show:after', function (menu, e) {
                             var internalMenu = menu._innerMenu;
                             internalMenu.scroller.update({alwaysVisibleY: true});
-                            _.delay(function() {
+                            _.delay(function () {
                                 menu._innerMenu && menu._innerMenu.items[0].cmpEl.find('> a').focus();
                             }, 10);
-                        }).on('keydown:before', function(menu, e) {
-                                if (e.keyCode == Common.UI.Keys.LEFT || e.keyCode == Common.UI.Keys.ESC) {
-                                    var $parent = menu.cmpEl.parent();
-                                    if ($parent.hasClass('dropdown-submenu') && $parent.hasClass('over')) { // close submenu
-                                        $parent.removeClass('over');
-                                        $parent.find('> a').focus();
-                                    }
+                        }).on('keydown:before', function (menu, e) {
+                            if (e.keyCode == Common.UI.Keys.LEFT || e.keyCode == Common.UI.Keys.ESC) {
+                                var $parent = menu.cmpEl.parent();
+                                if ($parent.hasClass('dropdown-submenu') && $parent.hasClass('over')) { // close submenu
+                                    $parent.removeClass('over');
+                                    $parent.find('> a').focus();
                                 }
+                            }
                         });
 
                         // internal menu
@@ -590,17 +620,15 @@ define([
                             maxHeight: 300,
                             cls: 'internal-menu',
                             items: arr,
-                            outerMenu:  {menu: mnu.menu, index: 0}
+                            outerMenu: {menu: mnu.menu, index: 0}
                         });
                         menu.on('item:click', function (menu, item, e) {
                             me.fireEvent('function:apply', [{name: item.caption, origin: item.value}, false, name]);
                         });
                         mnu.menu._innerMenu = menu;
                         mnu.menu.setInnerMenu([{menu: menu, index: 0}]);
-
-                        return mnu;
                     }
-                }
+                    return mnu;
             },
 
             fillFunctions: function () {
@@ -613,32 +641,37 @@ define([
                     this.setButtonMenu(this.btnMath, 'Mathematic');
                     this.setButtonMenu(this.btnRecent, 'Last10');
 
-                    var formulas = this.btnAutosum.menu.items;
+                    var formulas = this.btnAutosum.menu.getItems(true);
                     for (var i=0; i<Math.min(4,formulas.length); i++) {
                         this.api && formulas[i].setCaption(this.api.asc_getFormulaLocaleName(formulas[i].value));
                     }
 
                     // more button
                     var me = this,
-                        morearr = [];
-                    ['Cube', 'Database', 'Engineering',  'Information', 'Statistical'].forEach(function(name) {
-                        var mnu = me.setMenuItemMenu(name);
-                        mnu && morearr.push(mnu);
+                        btn = this.btnMore,
+                        morearr = [],
+                        visiblecount = 0;
 
+                    btn.menu && btn.menu.rendered && btn.menu.removeAll(true);
+
+                    ['Cube', 'Database', 'Engineering',  'Information', 'Statistical', 'Custom'].forEach(function(name) {
+                        var mnu = me.setMenuItemMenu(name);
+                        if (mnu) {
+                            morearr.push(mnu);
+                            mnu.visible && (visiblecount++);
+                        }
                     });
-                    var btn = this.btnMore;
                     if (morearr.length) {
                         if (btn.menu && btn.menu.rendered) {
-                            btn.menu.removeAll();
                             morearr.forEach(function(item){
-                                btn.menu.addItem(item);
+                                btn.menu.addItem(item, true);
                             });
                         } else {
                             btn.setMenu(new Common.UI.Menu({
                                 items: morearr
                             }));
                         }
-                        btn.menu.items.forEach(function(mnu){
+                        btn.menu.getItems(true).forEach(function(mnu){
                             var menuContainer = mnu.menu.items[0].cmpEl.children(':first'),
                                 menu = mnu.menu._innerMenu;
                             menu.render(menuContainer);
@@ -651,12 +684,29 @@ define([
                             menu.cmpEl.attr({tabindex: "-1"});
                         });
                     }
-                    Common.Utils.lockControls(Common.enumLock.noSubitems, morearr.length<1, {array: [btn]});
+                    Common.Utils.lockControls(Common.enumLock.noSubitems, visiblecount<1, {array: [btn]});
                 }
             },
 
             updateRecent: function() {
                 this.formulasGroups && this.setButtonMenu(this.btnRecent, 'Last10');
+            },
+
+            updateCustom: function() {
+                var btn = this.btnMore,
+                    mnu = this.formulasGroups ? this.setMenuItemMenu('Custom') : null;
+                if (mnu) {
+                    var hasvisible = false;
+                    if (btn.menu && btn.menu.rendered) {
+                        for (var i = 0; i < btn.menu.getItemsLength(true); i++) {
+                            if (btn.menu.items[i].visible) {
+                                hasvisible = true;
+                                break;
+                            }
+                        }
+                    }
+                    Common.Utils.lockControls(Common.enumLock.noSubitems, !hasvisible, {array: [btn]});
+                }
             },
 
             setApi: function (api) {

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -33,18 +33,13 @@
 /**
  *  WBProtection.js
  *
- *  Created by Julia Radzhabova on 21.06.2021
- *  Copyright (c) 2021Ascensio System SIA. All rights reserved.
+ *  Created on 21.06.2021
  *
  */
 define([
     'core',
     'common/main/lib/view/Protection',
-    'spreadsheeteditor/main/app/view/WBProtection',
-    'spreadsheeteditor/main/app/view/ProtectDialog',
-    'spreadsheeteditor/main/app/view/ProtectRangesDlg',
-    'spreadsheeteditor/main/app/view/ProtectedRangesManagerDlg',
-    'spreadsheeteditor/main/app/view/ProtectedRangesEditDlg'
+    'spreadsheeteditor/main/app/view/WBProtection'
 ], function () {
     'use strict';
 
@@ -297,9 +292,11 @@ define([
                 me.view.btnProtectWB.toggle(me.api.asc_isProtectedWorkbook(), true);
 
                 var props = me.getWSProps();
-                me.view.btnProtectSheet.toggle(props.wsLock, true); //current sheet
-                Common.Utils.lockControls(Common.enumLock['Objects'], props.wsProps['Objects'], { array: [me.view.chLockedText, me.view.chLockedShape]});
-                Common.Utils.lockControls(Common.enumLock.wsLock, props.wsLock, { array: [me.view.btnAllowRanges]});
+                if (props) {
+                    me.view.btnProtectSheet.toggle(props.wsLock, true); //current sheet
+                    Common.Utils.lockControls(Common.enumLock['Objects'], props.wsProps['Objects'], { array: [me.view.chLockedText, me.view.chLockedShape]});
+                    Common.Utils.lockControls(Common.enumLock.wsLock, props.wsLock, { array: [me.view.btnAllowRanges]});
+                }
             });
         },
 

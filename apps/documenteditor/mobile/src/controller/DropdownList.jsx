@@ -19,6 +19,10 @@ class DropdownListController extends Component {
         Common.Notifications.on('openDropdownList', obj => {
             this.initDropdownList(obj);
         });
+        Common.Notifications.on('openPdfDropdownList', obj => {
+            this.isCorePDF = true;
+            this.initPdfDropdownList(obj);
+        });
     }
 
     initDropdownList(obj) {
@@ -37,6 +41,23 @@ class DropdownListController extends Component {
         this.setState({
             isOpen: true,
             enteredValue: api.asc_GetSelectedText()
+        });
+    }
+
+    initPdfDropdownList(obj) {
+        this.listItems = [];
+        const options = obj.getOptions(),
+            count = options.length;
+        for (let i = 0; i < count; i++) {
+            this.listItems.push({
+                caption: Array.isArray(options[i]) ? options[i][0] : options[i],
+                value: i
+            });
+        }
+
+        this.setState({
+            isOpen: true,
+            // enteredValue: api.asc_GetSelectedText()
         });
     }
 
@@ -72,7 +93,7 @@ class DropdownListController extends Component {
 
     closeModal() {
         if(Device.isPhone) {
-            f7.sheet.close('#dropdown-list-sheet', true);
+            f7.popup.close('#dropdown-list-popup', true);
         } else {
             f7.popover.close('#dropdown-list-popover', true);
         }
@@ -86,7 +107,10 @@ class DropdownListController extends Component {
 
         if(value !== -1) {
             this.closeModal();
-            api.asc_SelectContentControlListItem(value, this.internalId);
+
+            if ( this.isCorePDF === true )
+                api.asc_SelectPDFFormListItem(value);
+            else api.asc_SelectContentControlListItem(value, this.internalId);
         }
     }
 

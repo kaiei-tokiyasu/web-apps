@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -39,7 +39,9 @@ SSE.ApplicationController = new(function(){
         appOptions = {},
         maxPages = 0,
         created = false,
-        iframePrint = null;
+        iframePrint = null,
+        isRtlSheet = false,
+        requireUserAction = true;
     var $ttEl,
         $tooltip,
         ttOffset = [6, -15],
@@ -86,6 +88,7 @@ SSE.ApplicationController = new(function(){
             $('.viewer').addClass('top');
         }
 
+        config.mode = 'view'; // always view for embedded
         config.canCloseEditor = false;
         var _canback = false;
         if (typeof config.customization === 'object') {
@@ -97,7 +100,7 @@ SSE.ApplicationController = new(function(){
                 if (config.customization.goback.requestClose)
                     console.log("Obsolete: The 'requestClose' parameter of the 'customization.goback' section is deprecated. Please use 'close' parameter in the 'customization' section instead.");
             }
-            if (typeof config.customization.close === 'object')
+            if (config.customization.close && typeof config.customization.close === 'object')
                 config.canCloseEditor  = (config.customization.close.visible!==false) && config.canRequestClose && !config.isDesktopApp;
         }
         config.canBackToFolder = !!_canback;
@@ -146,6 +149,8 @@ SSE.ApplicationController = new(function(){
             docInfo.put_EncryptedInfo(config.encryptionKeys);
             docInfo.put_Lang(config.lang);
             docInfo.put_Mode(config.mode);
+            docInfo.put_Wopi(config.wopi);
+            config.shardkey && docInfo.put_Shardkey(config.shardkey);
 
             var enable = !config.customization || (config.customization.macros!==false);
             docInfo.asc_putIsEnabledMacroses(!!enable);
@@ -174,36 +179,169 @@ SSE.ApplicationController = new(function(){
         $box.find('#worksheet' + index).addClass('active');
 
         api.asc_showWorksheet(index);
+        updateRtlSheet();
     }
 
     function onSheetsChanged(){
         maxPages = api.asc_getWorksheetsCount();
 
-            var handleWorksheet = function(e){
-                var $worksheet = $(this);
-                var index = $worksheet.attr('id').match(/\d+$/);
+        var handleWorksheet = function(e){
+            var $worksheet = $(this);
+            var index = $worksheet.attr('id').match(/\d+$/);
 
-                if (index.length > 0) {
-                    index = parseInt(index[0]);
+            if (index.length > 0) {
+                index = parseInt(index[0]);
 
-                    if (index > -1 && index < maxPages)
-                        setActiveWorkSheet(index);
-                }
-            };
+                if (index > -1 && index < maxPages)
+                    setActiveWorkSheet(index);
+            }
+        };
 
         var $box = $('#worksheets');
         $box.find('li').off();
         $box.empty();
 
-        var tpl = '<li id="worksheet{index}">{title}</li>';
+        var tpl = '<li id="worksheet{index}" tabtitle="{tabtitle}" {style}>{title}</li>';
         for (var i = 0; i < maxPages; i++) {
             if (api.asc_isWorksheetHidden(i)) continue;
 
-            var item = tpl.replace(/\{index}/, i).replace(/\{title}/,api.asc_getWorksheetName(i).replace(/\s/g,'&nbsp;'));
+            var styleAttr = "";
+            var color = api.asc_getWorksheetTabColor(i);
+
+            if (color) {
+                styleAttr = 'style="box-shadow: inset 0 4px 0 rgb({r}, {g}, {b})"'
+                    .replace(/\{r}/, color.get_r())
+                    .replace(/\{g}/, color.get_g())
+                    .replace(/\{b}/, color.get_b());
+            }
+
+            // escape html
+            var name = api.asc_getWorksheetName(i).replace(/[&<>"']/g, function (match) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[match];
+            });
+
+            var item = tpl
+                .replace(/\{index}/, i)
+                .replace(/\{tabtitle}/, name)
+                .replace(/\{title}/, name)
+                .replace(/\{style}/, styleAttr);
+
             $(item).appendTo($box).on('click', handleWorksheet);
         }
 
         setActiveWorkSheet(api.asc_getActiveWorksheetIndex());
+    }
+
+    function updateRtlSheet() {
+        var $container = $('#worksheet-container');
+        isRtlSheet = api && !common.utils.isIE ? !!api.asc_getSheetViewSettings().asc_getRightToLeft() : false;
+        $container.toggleClass('rtl-sheet', isRtlSheet);
+        $container.attr({dir: isRtlSheet ? 'rtl' : 'ltr'});
+    }
+
+    function setupScrollButtons() {
+        var $container = $('#worksheet-container');
+        var $prevButton = $('#worksheet-list-button-prev');
+        var $nextButton = $('#worksheet-list-button-next');
+        var $box = $('#worksheets');
+
+        var handleScrollButtonsState = function() {
+            if ($container[0].scrollWidth > $container[0].clientWidth) {
+                var scrollLeft = $container.scrollLeft();
+                var scrollWidth = $container[0].scrollWidth;
+                var containerWidth = $container.innerWidth();
+
+                if (isRtlSheet) {
+                    if (Math.abs(scrollLeft) + containerWidth >= scrollWidth - 1) {
+                        $prevButton.prop('disabled', false);
+                        $nextButton.prop('disabled', true);
+                    } else if (scrollLeft >= 0 ) {
+                        $prevButton.prop('disabled', true);
+                        $nextButton.prop('disabled', false);
+                    } else {
+                        $prevButton.prop('disabled', false);
+                        $nextButton.prop('disabled', false);
+                    }
+                } else {
+                    if (scrollLeft === 0) {
+                        $prevButton.prop('disabled', true);
+                        $nextButton.prop('disabled', false);
+                    } else if (scrollLeft + containerWidth >= scrollWidth) {
+                        $prevButton.prop('disabled', false);
+                        $nextButton.prop('disabled', true);
+                    } else {
+                        $prevButton.prop('disabled', false);
+                        $nextButton.prop('disabled', false);
+                    }
+                } 
+            } else {
+                $prevButton.prop('disabled', true);
+                $nextButton.prop('disabled', true);
+            }
+        };
+
+        $container.on('scroll', handleScrollButtonsState);
+        $(window).on('resize', handleScrollButtonsState);
+
+        handleScrollButtonsState();
+
+        var buttonWidth = $('.worksheet-list-buttons').outerWidth();
+
+        $prevButton.on('click', function() {
+            if (isRtlSheet) {
+                var rightBound = $container.width();
+                $($box.children().get().reverse()).each(function () {
+                    var $tab = $(this);
+                    var right = common.utils.getPosition($tab).left + $tab.outerWidth() + buttonWidth;
+    
+                    if (right > rightBound ) {
+                        $container.scrollLeft($container.scrollLeft() + right - rightBound + ($container.width() > 400 ? 20 : 5));
+                        return false;
+                    }
+                });
+            } else {
+                $($box.children().get().reverse()).each(function () {
+                    var $tab = $(this);
+                    var left = common.utils.getPosition($tab).left - buttonWidth;
+    
+                    if (left < 0) {
+                        $container.scrollLeft($container.scrollLeft() + left - 26);
+                        return false;
+                    }
+                });
+            }
+        });
+
+        $nextButton.on('click', function() {
+            if (isRtlSheet) {
+                $($box.children()).each(function () {
+                    var $tab = $(this);
+                    var left = common.utils.getPosition($tab).left - buttonWidth;
+    
+                    if (left < 0) {
+                        $container.scrollLeft($container.scrollLeft() + left - 26);
+                        return false;
+                    }
+                });
+            } else {
+                var rightBound = $container.width();
+                $box.children().each(function () {
+                    var $tab = $(this);
+                    var right = common.utils.getPosition($tab).left + $tab.outerWidth();
+    
+                    if (right > rightBound) {
+                        $container.scrollLeft($container.scrollLeft() + right - rightBound + ($container.width() > 400 ? 20 : 5));
+                        return false;
+                    }
+                });
+            }
+        });
     }
 
     function onDownloadUrl(url, fileType) {
@@ -226,6 +364,12 @@ SSE.ApplicationController = new(function(){
     function onDocumentContentReady() {
         hidePreloader();
         onLongActionEnd(Asc.c_oAscAsyncActionType['BlockInteraction'], LoadingDocument);
+
+        if (api) {
+            api.asc_Resize();
+            var zf = (config.customization && config.customization.zoom ? parseInt(config.customization.zoom)/100 : 1);
+            api.asc_setZoom(zf>0 ? zf : 1);
+        }
 
         var dividers = $('#box-tools .divider');
         var itemsCount = $('#box-tools a').length;
@@ -414,6 +558,9 @@ SSE.ApplicationController = new(function(){
 
         Common.Gateway.documentReady();
         Common.Analytics.trackEvent('Load', 'Complete');
+        requireUserAction = false;
+        onSheetsChanged();
+        setupScrollButtons();
     }
 
     function onEditorPermissions(params) {
@@ -431,7 +578,7 @@ SSE.ApplicationController = new(function(){
         appOptions.canBranding && setBranding(config.customization);
 
         var $parent = labelDocName.parent();
-        var _left_width = $parent.position().left,
+        var _left_width = common.utils.getPosition($parent).left,
             _right_width = $parent.next().outerWidth();
 
         if ( _left_width < _right_width )
@@ -474,19 +621,6 @@ SSE.ApplicationController = new(function(){
 
     function onLongActionEnd(type, id){
         if (type === Asc.c_oAscAsyncActionType.BlockInteraction) {
-            switch (id) {
-                case Asc.c_oAscAsyncAction.Open:
-                    if (api) {
-                        api.asc_Resize();
-                        var zf = (config.customization && config.customization.zoom ? parseInt(config.customization.zoom)/100 : 1);
-                        api.asc_setZoom(zf>0 ? zf : 1);
-                    }
-
-                    onDocumentContentReady();
-                    onSheetsChanged();
-                    break;
-            }
-
             me.loadMask && me.loadMask.hide();
         }
     }
@@ -506,6 +640,10 @@ SSE.ApplicationController = new(function(){
         } else if (type == Asc.c_oAscAdvancedOptionsID.CSV) {
             api && api.asc_setAdvancedOptions(Asc.c_oAscAdvancedOptionsID.CSV, advOptions.asc_getRecommendedSettings() || new Asc.asc_CTextOptions());
             onLongActionEnd(Asc.c_oAscAsyncActionType['BlockInteraction'], LoadingDocument);
+        }
+        if (requireUserAction) {
+            Common.Gateway.userActionRequired();
+            requireUserAction = false;
         }
     }
 
@@ -580,6 +718,10 @@ SSE.ApplicationController = new(function(){
                 message = me.errorTokenExpire;
                 break;
 
+            case Asc.c_oAscError.ID.VKeyEncrypt:
+                message= me.errorToken;
+                break;
+
             case Asc.c_oAscError.ID.ConvertationOpenFormat:
                 if (errData === 'pdf')
                     message = me.errorInconsistentExtPdf.replace('%1', docConfig.fileType || '');
@@ -601,8 +743,9 @@ SSE.ApplicationController = new(function(){
                 break;
 
             default:
-                message = me.errorDefaultMessage.replace('%1', id);
-                break;
+                // message = me.errorDefaultMessage.replace('%1', id);
+                // break;
+                return;
         }
 
         if (level == Asc.c_oAscError.Level.Critical) {
@@ -646,7 +789,7 @@ SSE.ApplicationController = new(function(){
         if (data.type == 'mouseup') {
             var editor = document.getElementById('editor_sdk');
             if (editor) {
-                var rect = editor.getBoundingClientRect();
+                var rect = common.utils.getBoundingClientRect(editor);
                 var event = window.event || arguments.callee.caller.arguments[0];
                 api.asc_onMouseUp(event, data.x - rect.left, data.y - rect.top);
             }
@@ -693,6 +836,7 @@ SSE.ApplicationController = new(function(){
 
                         $tooltip.find('.tooltip-arrow').css({left: 10});
                     });
+                    $ttEl.data('bs.tooltip').options.title = me.txtPressLink;
                 }
 
                 if (!$tooltip) {
@@ -773,6 +917,7 @@ SSE.ApplicationController = new(function(){
         if (api){
             api.asc_registerCallback('asc_onEndAction',             onLongActionEnd);
             api.asc_registerCallback('asc_onError',                 onError);
+            api.asc_registerCallback('asc_onDocumentContentReady',  onDocumentContentReady);
             api.asc_registerCallback('asc_onOpenDocumentProgress',  onOpenDocument);
             api.asc_registerCallback('asc_onAdvancedOptions',       onAdvancedOptions);
             api.asc_registerCallback('asc_onSheetsChanged',         onSheetsChanged);
@@ -827,5 +972,7 @@ SSE.ApplicationController = new(function(){
         warnLicenseBefore: 'License not active. Please contact your administrator.',
         warnLicenseExp: 'Your license has expired. Please update your license and refresh the page.',
         errorEditingDownloadas: 'An error occurred during the work with the document.<br>Use the \'Download as...\' option to save the file backup copy to your computer hard drive.',
+        errorToken: 'The document security token is not correctly formed.<br>Please contact your Document Server administrator.',
+        txtPressLink: 'Click the link to open it'
     }
 })();

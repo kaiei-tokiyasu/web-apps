@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -32,41 +32,18 @@
 /**
  *  Toolbar.js
  *
- *  Created by Alexander Yuzhin on 3/31/14
- *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *  Created on 3/31/14
  *
  */
 
 define([
     'core',
     'common/main/lib/component/Window',
-    'common/main/lib/view/CopyWarningDialog',
-    'common/main/lib/view/ImageFromUrlDialog',
-    'common/main/lib/view/SelectFileDlg',
-    'common/main/lib/view/SymbolTableDialog',
-    'common/main/lib/view/OptionsDialog',
-    'common/main/lib/util/define',
     'common/main/lib/view/SearchBar',
+    'spreadsheeteditor/main/app/view/define',
     'spreadsheeteditor/main/app/view/Toolbar',
     'spreadsheeteditor/main/app/collection/TableTemplates',
     'spreadsheeteditor/main/app/controller/PivotTable',
-    'spreadsheeteditor/main/app/view/HyperlinkSettingsDialog',
-    'spreadsheeteditor/main/app/view/TableOptionsDialog',
-    'spreadsheeteditor/main/app/view/NamedRangeEditDlg',
-    'spreadsheeteditor/main/app/view/NamedRangePasteDlg',
-    'spreadsheeteditor/main/app/view/NameManagerDlg',
-    'spreadsheeteditor/main/app/view/FormatSettingsDialog',
-    'spreadsheeteditor/main/app/view/PageMarginsDialog',
-    'spreadsheeteditor/main/app/view/HeaderFooterDialog',
-    'spreadsheeteditor/main/app/view/PrintTitlesDialog',
-    'spreadsheeteditor/main/app/view/ScaleDialog',
-    'spreadsheeteditor/main/app/view/FormatRulesManagerDlg',
-    'spreadsheeteditor/main/app/view/SlicerAddDialog',
-    'spreadsheeteditor/main/app/view/AdvancedSeparatorDialog',
-    'spreadsheeteditor/main/app/view/CreateSparklineDialog',
-    'spreadsheeteditor/main/app/view/ChartTypeDialog',
-    'spreadsheeteditor/main/app/view/ChartWizardDialog',
-    'spreadsheeteditor/main/app/view/FillSeriesDialog'
 ], function () { 'use strict';
 
     SSE.Controllers.Toolbar = Backbone.Controller.extend(_.extend({
@@ -91,6 +68,9 @@ define([
                     'insert:smartart'   : this.onInsertSmartArt,
                     'smartart:mouseenter': this.mouseenterSmartArt,
                     'smartart:mouseleave': this.mouseleaveSmartArt,
+                    'tab:active': this.onActiveTab,
+                    'tab:click': this.onClickTab,
+                    'tab:collapse': this.onTabCollapse
                 },
                 'FileMenu': {
                     'menu:hide': me.onFileMenu.bind(me, 'hide'),
@@ -161,6 +141,9 @@ define([
                 },
                 'LeftMenu': {
                     'search:show': this.searchShow.bind(this)
+                },
+                'PivotTable': {
+                    'insertpivot': this.onInsertPivot
                 }
             });
             Common.NotificationCenter.on('page:settings', _.bind(this.onApiSheetChanged, this));
@@ -169,6 +152,10 @@ define([
                 this.toolbar.collapse();
             }, this));
             Common.NotificationCenter.on('oleedit:close', _.bind(this.onOleEditClose, this));
+            Common.NotificationCenter.on('tab:set-active', _.bind(function(action){
+                this.toolbar.setTab(action);
+                this.onChangeViewMode(null, false, true);
+            }, this));
 
             this.editMode = true;
             this._isAddingShape = false;
@@ -216,7 +203,8 @@ define([
                 wsProps: [],
                 is_lockText: false,
                 is_lockShape: false,
-                isUserProtected: false
+                isUserProtected: false,
+                showPivotTab: false
             };
             this.binding = {};
 
@@ -268,7 +256,7 @@ define([
                 if (this.toolbar.btnInsertShape.pressed) this.toolbar.btnInsertShape.toggle(false, true);
                 if (this.toolbar.btnInsertText.pressed) {
                     this.toolbar.btnInsertText.toggle(false, true);
-                    this.toolbar.btnInsertText.menu.clearAll();
+                    this.toolbar.btnInsertText.menu.clearAll(true);
                 }
                 $(document.body).off('mouseup', checkInsertAutoshape);
             };
@@ -283,8 +271,20 @@ define([
         },
 
         setMode: function(mode) {
+            var _main = this.getApplication().getController('Main');
             this.mode = mode;
             this.toolbar.applyLayout(mode);
+            Common.UI.TooltipManager.addTips({
+                // 'insPivot' : {name: 'sse-help-tip-ins-pivot', placement: 'bottom-right', text: this.helpInsPivot, header: this.helpInsPivotHeader, target: 'li.ribtab #ins', automove: true},
+                // 'grayTheme' : {name: 'help-tip-gray-theme', placement: 'bottom-right', text: this.helpGrayTheme, header: this.helpGrayThemeHeader, target: '#slot-btn-interface-theme', automove: true, maxwidth: 320},
+                // 'customInfo' : {name: 'help-tip-custom-info', placement: 'right', text: this.helpCustomInfo, header: this.helpCustomInfoHeader, target: '#fm-btn-info', automove: true, extCls: 'inc-index'},
+                'refreshFile' : {text: _main.textUpdateVersion, header: _main.textUpdating, target: '#toolbar', maxwidth: 'none', showButton: false, automove: true, noHighlight: true, multiple: true},
+                'disconnect' : {text: _main.textConnectionLost, header: _main.textDisconnect, target: '#toolbar', maxwidth: 'none', showButton: false, automove: true, noHighlight: true, multiple: true},
+                'updateVersion' : {text: _main.errorUpdateVersionOnDisconnect, header: _main.titleUpdateVersion, target: '#toolbar', maxwidth: 600, showButton: false, automove: true, noHighlight: true, multiple: true},
+                'sessionIdle' : {text: _main.errorSessionIdle, target: '#toolbar', maxwidth: 600, showButton: false, automove: true, noHighlight: true, multiple: true},
+                'sessionToken' : {text: _main.errorSessionToken, target: '#toolbar', maxwidth: 600, showButton: false, automove: true, noHighlight: true, multiple: true}
+            });
+
         },
 
         attachUIEvents: function(toolbar) {
@@ -404,6 +404,7 @@ define([
                 toolbar.btnBackColor.on('color:select',                     _.bind(this.onBackColorSelect, this));
                 toolbar.btnBackColor.on('eyedropper:start',                 _.bind(this.onEyedropperStart, this));
                 toolbar.btnBackColor.on('eyedropper:end',                  _.bind(this.onEyedropperEnd, this));
+                toolbar.mnuFormatCellFill && toolbar.mnuFormatCellFill.on('click', _.bind(this.onFormatCellFill, this));
                 this.mode.isEdit && Common.NotificationCenter.on('eyedropper:start', _.bind(this.eyedropperStart, this));
                 toolbar.btnBorders.on('click',                              _.bind(this.onBorders, this));
                 if (toolbar.btnBorders.rendered) {
@@ -435,6 +436,7 @@ define([
                 toolbar.btnInsertSlicer.on('click',                         _.bind(this.onInsertSlicerClick, this));
                 toolbar.btnTableTemplate.menu.on('show:after',              _.bind(this.onTableTplMenuOpen, this));
                 toolbar.btnPercentStyle.on('click',                         _.bind(this.onNumberFormat, this));
+                toolbar.btnCommaStyle.on('click',                           _.bind(this.onNumberFormat, this));
                 toolbar.btnCurrencyStyle.on('click',                        _.bind(this.onNumberFormat, this));
                 toolbar.btnDecDecimal.on('click',                           _.bind(this.onDecrement, this));
                 toolbar.btnIncDecimal.on('click',                           _.bind(this.onIncrement, this));
@@ -478,6 +480,8 @@ define([
                 toolbar.btnPageBreak.menu.on('item:click',                  _.bind(this.onPageBreakClick, this));
                 toolbar.btnPageBreak.menu.on('show:after',                  _.bind(this.onPageBreakMenuOpen, this));
                 toolbar.btnImgGroup.menu.on('item:click',                   _.bind(this.onImgGroupSelect, this));
+                toolbar.btnShapesMerge.menu.on('item:click',                _.bind(this.onClickMenuShapesMerge, this));
+                toolbar.btnShapesMerge.menu.on('show:before',                _.bind(this.onBeforeShapesMerge, this));
                 toolbar.btnImgBackward.menu.on('item:click',                _.bind(this.onImgArrangeSelect, this));
                 toolbar.btnImgForward.menu.on('item:click',                 _.bind(this.onImgArrangeSelect, this));
                 toolbar.btnImgAlign.menu.on('item:click',                   _.bind(this.onImgAlignSelect, this));
@@ -487,8 +491,10 @@ define([
                     button.on('click', _.bind(me.onEditHeaderClick, me, undefined));
                 });
                 toolbar.btnPrintTitles.on('click',                          _.bind(this.onPrintTitlesClick, this));
-                toolbar.chPrintGridlines.on('change',                        _.bind(this.onPrintGridlinesChange, this));
-                toolbar.chPrintHeadings.on('change',                         _.bind(this.onPrintHeadingsChange, this));
+                toolbar.chPrintGridlines.on('change',                       _.bind(this.onPrintGridlinesChange, this));
+                toolbar.chPrintHeadings.on('change',                        _.bind(this.onPrintHeadingsChange, this));
+                toolbar.btnRtlSheet.on('click',                             _.bind(this.onRtlSheetClick, this));
+
                 if (toolbar.btnCondFormat.rendered) {
                     toolbar.btnCondFormat.menu.on('show:before',            _.bind(this.onShowBeforeCondFormat, this, this.toolbar, 'toolbar'));
                 }
@@ -533,6 +539,10 @@ define([
                 this.api.asc_registerCallback('asc_onSelectionChanged',     _.bind(this.onApiSelectionChangedRestricted, this));
                 Common.NotificationCenter.on('protect:wslock',              _.bind(this.onChangeProtectSheet, this));
             }
+            if ( !config.isEditDiagram  && !config.isEditMailMerge  && !config.isEditOle )
+                this.api.asc_registerCallback('onPluginToolbarMenu', _.bind(this.onPluginToolbarMenu, this));
+                this.api.asc_registerCallback('onPluginToolbarCustomMenuItems', _.bind(this.onPluginToolbarCustomMenuItems, this));
+                Common.NotificationCenter.on('document:ready', _.bind(this.onDocumentReady, this));
         },
 
         // onNewDocument: function(btn, e) {
@@ -585,7 +595,7 @@ define([
             if (this.api) {
                 var isModified = this.api.asc_isDocumentCanSave();
                 var isSyncButton = this.toolbar.btnCollabChanges && this.toolbar.btnCollabChanges.cmpEl.hasClass('notify');
-                if (!isModified && !isSyncButton && !this.toolbar.mode.forcesave)
+                if (!isModified && !isSyncButton && !this.toolbar.mode.forcesave && !this.toolbar.mode.canSaveDocumentToBinary)
                     return;
 
                 this.api.asc_Save();
@@ -779,6 +789,10 @@ define([
             Common.component.Analytics.trackEvent('ToolBar', 'Background Color');
         },
 
+        onFormatCellFill: function(picker, color) {
+            this.getApplication().getController('RightMenu').onRightMenuOpen(Common.Utils.documentSettingsType.Cell);
+        },
+
         onNewBorderColor: function(picker, color) {
             this.toolbar.btnBorders.menu.hide();
             this.toolbar.btnBorders.toggle(false, true);
@@ -804,7 +818,7 @@ define([
         onBorders: function(btn) {
             var menuItem;
 
-            _.each(btn.menu.items, function(item) {
+            _.each(btn.menu.getItems(true), function(item) {
                 if (btn.options.borderId == item.options.borderId) {
                     menuItem = item;
                     return false;
@@ -854,7 +868,8 @@ define([
 
                 Common.NotificationCenter.trigger('edit:complete', me.toolbar);
                 Common.component.Analytics.trackEvent('ToolBar', 'Borders');
-            }
+            } else if (item.value==='options')
+                this.getApplication().getController('RightMenu').onRightMenuOpen(Common.Utils.documentSettingsType.Cell);
         },
 
         onBordersWidth: function(menu, item, state) {
@@ -962,6 +977,11 @@ define([
         onTextOrientationMenu: function(menu, item) {
                 var angle = 0;
 
+                if (item.value==='options') {
+                    this.getApplication().getController('RightMenu').onRightMenuOpen(Common.Utils.documentSettingsType.Cell);
+                    return;
+                }
+
                 switch (item.value) {
                     case 'countcw':     angle =  45;    break;
                     case 'clockwise':   angle = -45;    break;
@@ -1006,10 +1026,6 @@ define([
                                     me.api.asc_addImageDrawingObject([checkUrl]);
 
                                     Common.component.Analytics.trackEvent('ToolBar', 'Image');
-                                } else {
-                                    Common.UI.warning({
-                                        msg: this.textEmptyImgUrl
-                                    });
                                 }
                             }
 
@@ -1116,7 +1132,7 @@ define([
         },
 
         onEditChart: function(btn) {
-            if (!this.editMode) return;
+            if (!this.editMode || !Common.Controllers.LaunchController.isScriptLoaded()) return;
             var me = this, info = me.api.asc_getCellInfo();
             var selectType = info.asc_getSelectionType();
             if (selectType !== Asc.c_oAscSelectionType.RangeImage) {
@@ -1159,7 +1175,9 @@ define([
         },
 
         onEditChartData: function(btn) {
-            if (!this.editMode) return;
+            if (!this.editMode || !Common.Controllers.LaunchController.isScriptLoaded()) {
+                return;
+            }
 
             var me = this;
             var props;
@@ -1188,7 +1206,7 @@ define([
         },
 
         onEditChartType: function(btn) {
-            if (!this.editMode) return;
+            if (!this.editMode || !Common.Controllers.LaunchController.isScriptLoaded()) return;
 
             var me = this;
             var props;
@@ -1319,12 +1337,12 @@ define([
         },
 
         onBtnInsertTextClick: function(btn, e) {
-            btn.menu.items.forEach(function(item) {
+            btn.menu.getItems(true).forEach(function(item) {
                 if(item.value == btn.options.textboxType) 
                 item.setChecked(true);
             });
             if(!this.toolbar.btnInsertText.pressed) {
-                this.toolbar.btnInsertText.menu.clearAll();
+                this.toolbar.btnInsertText.menu.clearAll(true);
             } 
             this.onInsertText(btn.options.textboxType, btn, e);
         },
@@ -1337,7 +1355,7 @@ define([
             if(newType != oldType){
                 this.toolbar.btnInsertText.changeIcon({
                     next: e.options.iconClsForMainBtn,
-                    curr: this.toolbar.btnInsertText.menu.items.filter(function(item){return item.value == oldType})[0].options.iconClsForMainBtn
+                    curr: this.toolbar.btnInsertText.menu.getItems(true).filter(function(item){return item.value == oldType})[0].options.iconClsForMainBtn
                 });
                 this.toolbar.btnInsertText.updateHint([e.caption, this.views.Toolbar.prototype.tipInsertText]);
                 this.toolbar.btnInsertText.options.textboxType = newType;
@@ -1742,8 +1760,8 @@ define([
         onColorSchemaShow: function(menu) {
             if (this.api) {
                 var value = this.api.asc_GetCurrentColorSchemeIndex();
-                var item = _.find(menu.items, function(item) { return item.value == value; });
-                (item) ? item.setChecked(true) : menu.clearAll();
+                var item = _.find(menu.getItems(true), function(item) { return item.value == value; });
+                (item) ? item.setChecked(true) : menu.clearAll(true);
             }
         },
 
@@ -2127,7 +2145,7 @@ define([
                                 (selectionType === Asc.c_oAscSelectionType.RangeCol) && !me.toolbar.btnAddCell.menu.items[3].isDisabled() && me.api.asc_insertCells(Asc.c_oAscInsertOptions.InsertColumns);
                                 Common.NotificationCenter.trigger('edit:complete', me.toolbar);
                             } else {
-                                var items = me.toolbar.btnAddCell.menu.items,
+                                var items = me.toolbar.btnAddCell.menu.getItems(true),
                                     arr = [],
                                     enabled = false;
                                 for (var i=0; i<4; i++) {
@@ -2157,7 +2175,7 @@ define([
                                 me.api.asc_deleteCells(selectionType === Asc.c_oAscSelectionType.RangeRow ? Asc.c_oAscDeleteOptions.DeleteRows :Asc.c_oAscDeleteOptions.DeleteColumns );
                                 Common.NotificationCenter.trigger('edit:complete', me.toolbar);
                             } else {
-                                var items = me.toolbar.btnDeleteCell.menu.items,
+                                var items = me.toolbar.btnDeleteCell.menu.getItems(true),
                                     arr = [],
                                     enabled = false;
                                 for (var i=0; i<4; i++) {
@@ -2189,11 +2207,13 @@ define([
             Common.NotificationCenter.on('cells:range', _.bind(this.onCellsRange, this));
         },
 
-        onChangeViewMode: function(item, compact) {
+        onChangeViewMode: function(item, compact, suppressSave) {
             this.toolbar.setFolded(compact);
             this.toolbar.fireEvent('view:compact', [this, compact]);
+            compact && this.onTabCollapse();
 
-            Common.localStorage.setBool('sse-compact-toolbar', compact);
+            !suppressSave && Common.localStorage.setBool(this.mode.isEdit ? "sse-compact-toolbar" : "sse-view-compact-toolbar", compact);
+            
             Common.NotificationCenter.trigger('layout:changed', 'toolbar');
             Common.NotificationCenter.trigger('edit:complete', this.toolbar);
         },
@@ -2639,7 +2659,8 @@ define([
 
             var currentSheet = this.api.asc_getActiveWorksheetIndex(),
                 props = this.api.asc_getPageOptions(currentSheet),
-                opt = props.asc_getPageSetup();
+                opt = props.asc_getPageSetup(),
+                params  = this.api.asc_getSheetViewSettings();
 
             this.onApiPageOrient(opt.asc_getOrientation());
             this.onApiPageSize(opt.asc_getWidth(), opt.asc_getHeight());
@@ -2647,6 +2668,7 @@ define([
             this.onChangeScaleSettings(opt.asc_getFitToWidth(),opt.asc_getFitToHeight(),opt.asc_getScale());
             this.onApiGridLines(props.asc_getGridLines());
             this.onApiHeadings(props.asc_getHeadings());
+            this.onApiRtlSheet(params.asc_getRightToLeft());
 
             this.api.asc_isLayoutLocked(currentSheet) ? this.onApiLockDocumentProps(currentSheet) : this.onApiUnLockDocumentProps(currentSheet);
             this.toolbar.lockToolbar(Common.enumLock.printAreaLock, this.api.asc_isPrintAreaLocked(currentSheet), {array: [this.toolbar.btnPrintArea]});
@@ -2666,6 +2688,10 @@ define([
             this.toolbar.chPrintHeadings.setValue(checked, true);
         },
 
+        onApiRtlSheet: function (checked) {
+            this.toolbar.btnRtlSheet.toggle(!!checked, true);
+        },
+
         onApiPageSize: function(w, h) {
             if (this._state.pgorient===undefined) return;
 
@@ -2673,8 +2699,8 @@ define([
                 Math.abs(this._state.pgsize[1] - h) > 0.1) {
                 this._state.pgsize = [w, h];
                 if (this.toolbar.mnuPageSize) {
-                    this.toolbar.mnuPageSize.clearAll();
-                    _.each(this.toolbar.mnuPageSize.items, function(item){
+                    this.toolbar.mnuPageSize.clearAll(true);
+                    _.each(this.toolbar.mnuPageSize.getItems(true), function(item){
                         if (item.value && typeof(item.value) == 'object' &&
                             Math.abs(item.value[0] - w) < 0.1 && Math.abs(item.value[1] - h) < 0.1) {
                             item.setChecked(true);
@@ -2697,8 +2723,8 @@ define([
                     Math.abs(this._state.pgmargins[3] - right) > 0.1) {
                     this._state.pgmargins = [top, left, bottom, right];
                     if (this.toolbar.btnPageMargins.menu) {
-                        this.toolbar.btnPageMargins.menu.clearAll();
-                        _.each(this.toolbar.btnPageMargins.menu.items, function(item){
+                        this.toolbar.btnPageMargins.menu.clearAll(true);
+                        _.each(this.toolbar.btnPageMargins.menu.getItems(true), function(item){
                             if (item.value && typeof(item.value) == 'object' &&
                                 Math.abs(item.value[0] - top) < 0.1 && Math.abs(item.value[1] - left) < 0.1 &&
                                 Math.abs(item.value[2] - bottom) < 0.1 && Math.abs(item.value[3] - right) < 0.1) {
@@ -2730,8 +2756,8 @@ define([
                     } else {
                         this.toolbar.setValueCustomScale(this.api.asc_getPageOptions().asc_getPageSetup().asc_getScale());
                     }
-                    this.toolbar.menuWidthScale.clearAll();
-                    this.toolbar.menuWidthScale.items.forEach(function (item) {
+                    this.toolbar.menuWidthScale.clearAll(true);
+                    this.toolbar.menuWidthScale.getItems(true).forEach(function (item) {
                         if (item.value === width) {
                             item.setChecked(true);
                             isWidth = true;
@@ -2741,8 +2767,8 @@ define([
                     if (!isWidth) {
                         this.toolbar.menuWidthScale.items[11].setChecked(true);
                     }
-                    this.toolbar.menuHeightScale.clearAll();
-                    this.toolbar.menuHeightScale.items.forEach(function (item) {
+                    this.toolbar.menuHeightScale.clearAll(true);
+                    this.toolbar.menuHeightScale.getItems(true).forEach(function (item) {
                         if (item.value === height) {
                             item.setChecked(true);
                             isHeight = true;
@@ -2825,7 +2851,7 @@ define([
 
                     btnSubscript.toggle(index>-1, true);
                     if (index < 0) {
-                        btnSubscript.menu.clearAll();
+                        btnSubscript.menu.clearAll(true);
                     } else {
                         btnSubscript.menu.items[index].setChecked(true);
                         if ( btnSubscript.rendered && btnSubscript.$icon ) {
@@ -2874,19 +2900,7 @@ define([
                             (type1!='object' && this._state.clrtext!==undefined && this._state.clrtext.indexOf(clr)<0 )) {
 
                             this.toolbar.btnTextColor.setAutoColor(false);
-                            if (_.isObject(clr)) {
-                                var isselected = false;
-                                for (var i = 0; i < 10; i++) {
-                                    if (Common.Utils.ThemeColor.ThemeValues[i] == clr.effectValue) {
-                                        fontColorPicker.select(clr, true);
-                                        isselected = true;
-                                        break;
-                                    }
-                                }
-                                if (!isselected) fontColorPicker.clearSelection();
-                            } else {
-                                fontColorPicker.select(clr, true);
-                            }
+                            Common.Utils.ThemeColor.selectPickerColorByEffect(clr, fontColorPicker);
                             this._state.clrtext = clr;
                         }
                     }
@@ -2939,7 +2953,7 @@ define([
 
             need_disable = (selectionType === Asc.c_oAscSelectionType.RangeCells || selectionType === Asc.c_oAscSelectionType.RangeCol ||
                 selectionType === Asc.c_oAscSelectionType.RangeRow || selectionType === Asc.c_oAscSelectionType.RangeMax);
-            toolbar.lockToolbar(Common.enumLock.selRange, need_disable, { array: [toolbar.btnImgAlign, toolbar.btnImgBackward, toolbar.btnImgForward, toolbar.btnImgGroup]});
+            toolbar.lockToolbar(Common.enumLock.selRange, need_disable, { array: [toolbar.btnImgAlign, toolbar.btnImgBackward, toolbar.btnImgForward, toolbar.btnImgGroup, toolbar.btnShapesMerge]});
 
             var cangroup = this.api.asc_canGroupGraphicsObjects(),
                 canungroup = this.api.asc_canUnGroupGraphicsObjects();
@@ -2951,6 +2965,8 @@ define([
             var objcount = this.api.asc_getSelectedDrawingObjectsCount();
             toolbar.btnImgAlign.menu.items[7].setDisabled(objcount<3);
             toolbar.btnImgAlign.menu.items[8].setDisabled(objcount<3);
+ 
+            toolbar.lockToolbar(Common.enumLock.cantMergeShape, !this.api.asc_canMergeSelectedShapes(), { array: [toolbar.btnShapesMerge] });
 
             // disable on protected sheet
             // lock formatting controls in cell with FormatCells protection or in shape and Objects protection
@@ -3004,7 +3020,7 @@ define([
 
                     btnSubscript.toggle(index>-1, true);
                     if (index < 0) {
-                        btnSubscript.menu.clearAll();
+                        btnSubscript.menu.clearAll(true);
                     } else {
                         btnSubscript.menu.items[index].setChecked(true);
                         if ( btnSubscript.rendered ) {
@@ -3047,19 +3063,7 @@ define([
                             (type1!='object' && this._state.clrtext!==undefined && this._state.clrtext.indexOf(clr)<0 )) {
 
                             toolbar.btnTextColor.setAutoColor(false);
-                            if (_.isObject(clr)) {
-                                var isselected = false;
-                                for (var i = 0; i < 10; i++) {
-                                    if (Common.Utils.ThemeColor.ThemeValues[i] == clr.effectValue) {
-                                        fontColorPicker.select(clr, true);
-                                        isselected = true;
-                                        break;
-                                    }
-                                }
-                                if (!isselected) fontColorPicker.clearSelection();
-                            } else {
-                                fontColorPicker.select(clr, true);
-                            }
+                            Common.Utils.ThemeColor.selectPickerColorByEffect(clr, fontColorPicker);
                             this._state.clrtext = clr;
                         }
                     }
@@ -3086,19 +3090,7 @@ define([
                     (clr.effectValue!==this._state.clrback.effectValue || this._state.clrback.color.indexOf(clr.color)<0)) ||
                     (type1!='object' && this._state.clrback!==undefined && this._state.clrback.indexOf(clr)<0 )) {
 
-                    if (_.isObject(clr)) {
-                        var isselected = false;
-                        for (i = 0; i < 10; i++) {
-                            if (Common.Utils.ThemeColor.ThemeValues[i] == clr.effectValue) {
-                                paragraphColorPicker.select(clr, true);
-                                isselected = true;
-                                break;
-                            }
-                        }
-                        if (!isselected) paragraphColorPicker.clearSelection();
-                    } else {
-                        paragraphColorPicker.select(clr, true);
-                    }
+                    Common.Utils.ThemeColor.selectPickerColorByEffect(clr, paragraphColorPicker);
                     this._state.clrback = clr;
                 }
                 this._state.clrshd_asccolor = color;
@@ -3230,7 +3222,15 @@ define([
                 this._state.multiselect = info.asc_getMultiselect();
                 toolbar.lockToolbar(Common.enumLock.multiselect, this._state.multiselect, { array: [toolbar.btnTableTemplate, toolbar.btnInsertHyperlink, toolbar.btnInsertTable]});
 
-                this._state.inpivot = !!info.asc_getPivotTableInfo();
+                var inpivot = !!info.asc_getPivotTableInfo();
+                if (this._state.inpivot !== inpivot) {
+                    if ( !inpivot && this.toolbar.isTabActive('pivot') )
+                        this.toolbar.setTab('home');
+                    this.toolbar.setVisible('pivot', !!inpivot);
+                    if (inpivot && this._state.showPivotTab)
+                        this.toolbar.setTab('pivot');
+                    this._state.inpivot = inpivot;
+                }
                 toolbar.lockToolbar(Common.enumLock.editPivot, this._state.inpivot, { array: toolbar.btnsSetAutofilter.concat(toolbar.btnMerge, toolbar.btnInsertHyperlink, toolbar.btnInsertTable, toolbar.btnRemoveDuplicates, toolbar.btnDataValidation)});
                 toolbar.lockToolbar(Common.enumLock.noSlicerSource, !(this._state.inpivot || formatTableInfo), { array: [toolbar.btnInsertSlicer]});
 
@@ -3253,7 +3253,7 @@ define([
 
             val = xfs.asc_getAngle();
             if (this._state.angle !== val) {
-                toolbar.btnTextOrient.menu.clearAll();
+                toolbar.btnTextOrient.menu.clearAll(true);
                 switch(val) {
                     case 45:    toolbar.btnTextOrient.menu.items[1].setChecked(true, true); break;
                     case -45:   toolbar.btnTextOrient.menu.items[2].setChecked(true, true); break;
@@ -3311,14 +3311,14 @@ define([
             need_disable = selCol || val || !(selRow || selMax) && this._state.wsLock || selRow && this._state.wsProps['DeleteRows'] || selMax && this._state.wsProps['DeleteColumns'] && this._state.wsProps['DeleteRows'];
             toolbar.btnDeleteCell.menu.items[1].setDisabled(need_disable);
 
-            var items = toolbar.btnAddCell.menu.items,
+            var items = toolbar.btnAddCell.menu.getItems(true),
                 enabled = false;
             for (var i=0; i<4; i++) {
                 !items[i].isDisabled() && (enabled = true);
             }
             toolbar.lockToolbar(Common.enumLock.itemsDisabled, !enabled, {array: [toolbar.btnAddCell]});
 
-            items = me.toolbar.btnDeleteCell.menu.items;
+            items = me.toolbar.btnDeleteCell.menu.getItems(true);
             enabled = false;
             for (var i=0; i<4; i++) {
                 !items[i].isDisabled() && (enabled = true);
@@ -3597,19 +3597,7 @@ define([
                             (type1!='object' && this._state.clrtext!==undefined && this._state.clrtext.indexOf(clr)<0 )) {
 
                             toolbar.btnTextColor.setAutoColor(false);
-                            if (_.isObject(clr)) {
-                                var isselected = false;
-                                for (var i = 0; i < 10; i++) {
-                                    if (Common.Utils.ThemeColor.ThemeValues[i] == clr.effectValue) {
-                                        fontColorPicker.select(clr, true);
-                                        isselected = true;
-                                        break;
-                                    }
-                                }
-                                if (!isselected) fontColorPicker.clearSelection();
-                            } else {
-                                fontColorPicker.select(clr, true);
-                            }
+                            Common.Utils.ThemeColor.selectPickerColorByEffect(clr, fontColorPicker);
                             this._state.clrtext = clr;
                         }
                     }
@@ -3636,19 +3624,7 @@ define([
                         (clr.effectValue!==this._state.clrback.effectValue || this._state.clrback.color.indexOf(clr.color)<0)) ||
                     (type1!='object' && this._state.clrback!==undefined && this._state.clrback.indexOf(clr)<0 )) {
 
-                    if (_.isObject(clr)) {
-                        var isselected = false;
-                        for (i = 0; i < 10; i++) {
-                            if (Common.Utils.ThemeColor.ThemeValues[i] == clr.effectValue) {
-                                paragraphColorPicker.select(clr, true);
-                                isselected = true;
-                                break;
-                            }
-                        }
-                        if (!isselected) paragraphColorPicker.clearSelection();
-                    } else {
-                        paragraphColorPicker.select(clr, true);
-                    }
+                    Common.Utils.ThemeColor.selectPickerColorByEffect(clr, paragraphColorPicker);
                     this._state.clrback = clr;
                 }
                 this._state.clrshd_asccolor = color;
@@ -3674,7 +3650,7 @@ define([
                 if (!(index < 0)) {
                     toolbar.btnHorizontalAlign.menu.items[index].setChecked(true);
                 } else if (index == -255) {
-                    toolbar.btnHorizontalAlign.menu.clearAll();
+                    toolbar.btnHorizontalAlign.menu.clearAll(true);
                 }
                 if ( toolbar.btnHorizontalAlign.rendered && toolbar.btnHorizontalAlign.$icon ) {
                     toolbar.btnHorizontalAlign.$icon.removeClass(toolbar.btnHorizontalAlign.options.icls).addClass(align);
@@ -3698,7 +3674,7 @@ define([
                 if (!(index < 0)) {
                     toolbar.btnVerticalAlign.menu.items[index].setChecked(true);
                 } else if (index == -255) {
-                    toolbar.btnVerticalAlign.menu.clearAll();
+                    toolbar.btnVerticalAlign.menu.clearAll(true);
                 }
                 if ( toolbar.btnVerticalAlign.rendered && toolbar.btnVerticalAlign.$icon ) {
                     toolbar.btnVerticalAlign.$icon.removeClass(toolbar.btnVerticalAlign.options.icls).addClass(align);
@@ -3861,19 +3837,7 @@ define([
                             (type1!='object' && this._state.clrtext!==undefined && this._state.clrtext.indexOf(clr)<0 )) {
 
                             this.toolbar.btnTextColor.setAutoColor(false);
-                            if (_.isObject(clr)) {
-                                var isselected = false;
-                                for (var i = 0; i < 10; i++) {
-                                    if (Common.Utils.ThemeColor.ThemeValues[i] == clr.effectValue) {
-                                        fontColorPicker.select(clr, true);
-                                        isselected = true;
-                                        break;
-                                    }
-                                }
-                                if (!isselected) fontColorPicker.clearSelection();
-                            } else {
-                                fontColorPicker.select(clr, true);
-                            }
+                            Common.Utils.ThemeColor.selectPickerColorByEffect(clr, fontColorPicker);
                             this._state.clrtext = clr;
                         }
                     }
@@ -3991,7 +3955,7 @@ define([
             var menuitem = new Common.UI.MenuItem({
                 template: _.template('<div id="id-toolbar-menu-insertshape" class="menu-insertshape"></div>')
             });
-            me.toolbar.btnInsertShape.menu.addItem(menuitem);
+            me.toolbar.btnInsertShape.menu.addItem(menuitem, true);
 
             var recents = Common.localStorage.getItem('sse-recent-shapes');
 
@@ -4000,10 +3964,12 @@ define([
                 itemTemplate: _.template('<div class="item-shape" id="<%= id %>"><svg width="20" height="20" class=\"icon uni-scale\"><use xlink:href=\"#svg-icon-<%= data.shapeType %>\"></use></svg></div>'),
                 groups: me.getApplication().getCollection('ShapeGroups'),
                 parentMenu: me.toolbar.btnInsertShape.menu,
+                outerMenu: {menu: me.toolbar.btnInsertShape.menu, index:0},
                 restoreHeight: 652,
                 textRecentlyUsed: me.textRecentlyUsed,
                 recentShapes: recents ? JSON.parse(recents) : null
             });
+            me.toolbar.btnInsertShape.menu.setInnerMenu([{menu: shapePicker, index: 0}]);
             shapePicker.on('item:click', function(picker, item, record, e) {
                 if (me.api) {
                     if (record) {
@@ -4023,11 +3989,9 @@ define([
         },
 
         fillEquations: function() {
-            if (!this.toolbar.btnInsertEquation.rendered || this.toolbar.btnInsertEquation.menu.items.length>0) return;
+            if (!this.toolbar.btnInsertEquation.rendered || this.toolbar.btnInsertEquation.menu.getItemsLength(true)>0) return;
 
             var me = this, equationsStore = this.getApplication().getCollection('EquationGroups');
-
-            me.toolbar.btnInsertEquation.menu.removeAll();
             var onShowAfter = function(menu) {
                 for (var i = 0; i < equationsStore.length; ++i) {
                     var equationPicker = new Common.UI.DataViewSimple({
@@ -4076,7 +4040,7 @@ define([
                         ]
                     })
                 });
-                me.toolbar.btnInsertEquation.menu.addItem(menuItem);
+                me.toolbar.btnInsertEquation.menu.addItem(menuItem, true);
             }
         },
 
@@ -4094,6 +4058,7 @@ define([
 
         onInsertSymbolClickCallback: function() {
             if (this.api) {
+                console.log('init')
                 var me = this,
                     selected = me.api.asc_GetSelectedText(),
                     win = new Common.Views.SymbolTableDialog({
@@ -4547,7 +4512,7 @@ define([
 
         applyFormulaSettings: function() {
             if (this.toolbar.btnInsertFormula && this.toolbar.btnInsertFormula.rendered) {
-                var formulas = this.toolbar.btnInsertFormula.menu.items;
+                var formulas = this.toolbar.btnInsertFormula.menu.getItems(true);
                 for (var i=0; i<Math.min(4,formulas.length); i++) {
                     formulas[i].setCaption(this.api.asc_getFormulaLocaleName(formulas[i].value));
                 }
@@ -4558,22 +4523,24 @@ define([
             var me = this;
             me.appConfig = config;
 
-            var compactview = !config.isEdit;
-            if ( config.isEdit && !config.isEditDiagram && !config.isEditMailMerge && !config.isEditOle ) {
-                if ( Common.localStorage.itemExists("sse-compact-toolbar") ) {
-                    compactview = Common.localStorage.getBool("sse-compact-toolbar");
-                } else
-                if ( config.customization && config.customization.compactToolbar )
-                    compactview = true;
+            var editmode = config.isEdit,
+                compactview = !editmode;
+            if (!config.isEditDiagram && !config.isEditMailMerge && !config.isEditOle) {
+                if ( Common.localStorage.itemExists(editmode ? "sse-compact-toolbar" : "sse-view-compact-toolbar") ) {
+                    compactview = Common.localStorage.getBool(editmode ? "sse-compact-toolbar" : "sse-view-compact-toolbar");
+                } else if (config.customization) {
+                    compactview = editmode ? !!config.customization.compactToolbar : config.customization.compactToolbar!==false;
+                }
+                Common.Utils.InternalSettings.set('toolbar-active-tab', !editmode && !compactview);
             }
 
-            me.toolbar.render(_.extend({isCompactView: compactview}, config));
+            me.toolbar.render(_.extend({isCompactView: editmode ? compactview : true}, config));
 
             if ( !config.isEditDiagram && !config.isEditMailMerge && !config.isEditOle ) {
                 var tab = {action: 'review', caption: me.toolbar.textTabCollaboration, layoutname: 'toolbar-collaboration', dataHintTitle: 'U'};
                 var $panel = me.getApplication().getController('Common.Controllers.ReviewChanges').createToolbarPanel();
                 if ($panel) {
-                    me.toolbar.addTab(tab, $panel, 7);
+                    me.toolbar.addTab(tab, $panel, 6);
                     me.toolbar.setVisible('review', (config.isEdit || config.canViewReview || config.canCoAuthoring && config.canComments) && Common.UI.LayoutManager.isElementVisible('toolbar-collaboration'));
                 }
             }
@@ -4625,13 +4592,13 @@ define([
                         pivottab.setApi(me.api).setConfig({toolbar: me});
                         $panel = pivottab.createToolbarPanel();
                         if ($panel) {
-                            me.toolbar.addTab(tab, $panel, 6);
-                            me.toolbar.setVisible('pivot', true);
+                            me.toolbar.addTab(tab, $panel, Common.UI.LayoutManager.lastTabIdx+1);
+                            me._state.inpivot && me.toolbar.setVisible('pivot', true);
                             Array.prototype.push.apply(me.toolbar.lockControls, pivottab.getView('PivotTable').getButtons());
                         }
                     }
 
-                    if (!(config.customization && config.customization.compactHeader)) {
+                    if (!config.compactHeader) {
                         // hide 'print' and 'save' buttons group and next separator
                         me.toolbar.btnPrint.$el.parents('.group').hide().next().hide();
 
@@ -4652,7 +4619,7 @@ define([
                             (config.isSignatureSupport || config.isPasswordSupport) && $panel.append($('<div class="separator long"></div>'));
                             var wbtab = me.getApplication().getController('WBProtection');
                             $panel.append(wbtab.createToolbarPanel());
-                            me.toolbar.addTab(tab, $panel, 8);
+                            me.toolbar.addTab(tab, $panel, 7);
                             me.toolbar.setVisible('protect', Common.UI.LayoutManager.isElementVisible('toolbar-protect'));
                             Array.prototype.push.apply(me.toolbar.lockControls, wbtab.getView('WBProtection').getButtons());
                         }
@@ -4665,8 +4632,10 @@ define([
                 viewtab.setApi(me.api).setConfig({toolbar: me, mode: config});
                 var $panel = viewtab.createToolbarPanel();
                 if ($panel) {
-                    me.toolbar.addTab(tab, $panel, 9);
-                    me.toolbar.setVisible('view', Common.UI.LayoutManager.isElementVisible('toolbar-view'));
+                    var visible = Common.UI.LayoutManager.isElementVisible('toolbar-view');
+                    me.toolbar.addTab(tab, $panel, 8);
+                    me.toolbar.setVisible('view', visible);
+                    !editmode && !compactview && visible && Common.Utils.InternalSettings.set('toolbar-active-tab', 'view'); // need to activate later
                 }
                 config.isEdit && Array.prototype.push.apply(me.toolbar.lockControls, viewtab.getView('ViewTab').getButtons());
             }
@@ -4679,7 +4648,7 @@ define([
             this.btnsComment = [];
             if ( config.canCoAuthoring && config.canComments ) {
                 var _set = Common.enumLock;
-                this.btnsComment = Common.Utils.injectButtons(this.toolbar.$el.find('.slot-comment'), 'tlbtn-addcomment-', 'toolbar__icon btn-add-comment', this.toolbar.capBtnComment,
+                this.btnsComment = Common.Utils.injectButtons(this.toolbar.$el.find('.slot-comment'), 'tlbtn-addcomment-', 'toolbar__icon btn-big-add-comment', this.toolbar.capBtnComment,
                                                             [_set.lostConnect, _set.commentLock, _set.editCell, _set['Objects']], undefined, undefined, undefined, '1', 'bottom', 'small');
 
                 if ( this.btnsComment.length ) {
@@ -4697,12 +4666,13 @@ define([
                         this.btnsComment.add(_comments.buttonAddNew);
                     }
                     Array.prototype.push.apply(me.toolbar.lockControls, this.btnsComment);
+                    Common.UI.LayoutManager.addControls(this.btnsComment);
                 }
             }
 
             Common.Utils.asyncCall(function () {
                 if ( config.isEdit ) {
-                    me.toolbar.onAppReady(config);
+                    Common.UI.TooltipManager.showTip('insPivot');
                 }
             });
         },
@@ -4715,6 +4685,10 @@ define([
                 if ( this.toolbar.isTabActive('file') )
                     this.toolbar.setTab();
             }
+        },
+
+        onInsertPivot:  function() {
+            this._state.showPivotTab = true;
         },
 
         onPageSizeClick: function(menu, item, state) {
@@ -4809,6 +4783,20 @@ define([
                     this.api.asc_DistributeSelectedDrawingObjectVer();
                     Common.component.Analytics.trackEvent('ToolBar', 'Distribute');
                 }
+            }
+            Common.NotificationCenter.trigger('edit:complete', this.toolbar);
+        },
+
+        onBeforeShapesMerge: function() {               
+            this.toolbar.btnShapesMerge.menu.items.forEach(function (item) {
+                item.setDisabled(!this.api.asc_canMergeSelectedShapes(item.value)); 
+            }, this);
+        },
+
+        onClickMenuShapesMerge: function (menu, item) {
+            if (item && item.value) {
+                this.api.asc_mergeSelectedShapes(item.value); 
+                Common.component.Analytics.trackEvent('ToolBar', 'Shapes Merge'); 
             }
             Common.NotificationCenter.trigger('edit:complete', this.toolbar);
         },
@@ -4984,12 +4972,17 @@ define([
         },
 
         onPrintGridlinesChange: function (field, value) {
-            this.api.asc_SetPrintGridlines(value === 'checked');
+            this.api && this.api.asc_SetPrintGridlines(value === 'checked');
             Common.NotificationCenter.trigger('edit:complete', this.toolbar);
         },
 
         onPrintHeadingsChange: function (field, value) {
-            this.api.asc_SetPrintHeadings(value === 'checked');
+            this.api && this.api.asc_SetPrintHeadings(value === 'checked');
+            Common.NotificationCenter.trigger('edit:complete', this.toolbar);
+        },
+
+        onRtlSheetClick: function (btn) {
+            this.api && this.api.asc_setRightToLeft(btn.pressed);
             Common.NotificationCenter.trigger('edit:complete', this.toolbar);
         },
 
@@ -5106,7 +5099,7 @@ define([
 
         onApiBeginSmartArtPreview: function (type) {
             this.smartArtGenerating = type;
-            this.smartArtGroups = this.toolbar.btnInsertSmartArt.menu.items;
+            this.smartArtGroups = this.toolbar.btnInsertSmartArt.menu.getItems(true);
             var menuPicker = _.findWhere(this.smartArtGroups, {value: type}).menuPicker;
             menuPicker.loaded = true;
             this.smartArtData = Common.define.smartArt.getSmartArtData();
@@ -5215,397 +5208,50 @@ define([
 
         onShowBeforeFillNumMenu: function() {
             if (this.api) {
-                var items = this.toolbar.btnFillNumbers.menu.items,
+                var items = this.toolbar.btnFillNumbers.menu.getItems(true),
                     props = this.api.asc_GetSeriesSettings().asc_getToolbarMenuAllowedProps();
 
-                for (var i = 0; i < items.length; i++) {
+                for (var i = 0; i < items.length ; i++) {
                     items[i].setDisabled(!props[items[i].value]);
                 }
             }
         },
 
-        textEmptyImgUrl     : 'You need to specify image URL.',
-        warnMergeLostData   : 'Operation can destroy data in the selected cells.<br>Continue?',
-        textWarning         : 'Warning',
-        textFontSizeErr     : 'The entered value is incorrect.<br>Please enter a numeric value between 1 and 409',
-        confirmAddFontName  : 'The font you are going to save is not available on the current device.<br>The text style will be displayed using one of the device fonts, the saved font will be used when it is available.<br>Do you want to continue?',
-        textSymbols                                : 'Symbols',
-        textFraction                               : 'Fraction',
-        textScript                                 : 'Script',
-        textRadical                                : 'Radical',
-        textIntegral                               : 'Integral',
-        textLargeOperator                          : 'Large Operator',
-        textBracket                                : 'Bracket',
-        textFunction                               : 'Function',
-        textAccent                                 : 'Accent',
-        textLimitAndLog                            : 'Limit And Log',
-        textOperator                               : 'Operator',
-        textMatrix                                 : 'Matrix',
+        onPluginToolbarMenu: function(data) {
+            this.toolbar && Array.prototype.push.apply(this.toolbar.lockControls, Common.UI.LayoutManager.addCustomControls(this.toolbar, data));
+        },
 
-        txtSymbol_pm                               : 'Plus Minus',
-        txtSymbol_infinity                         : 'Infinity',
-        txtSymbol_equals                           : 'Equal',
-        txtSymbol_neq                              : 'Not Equal To',
-        txtSymbol_about                            : 'Approximately',
-        txtSymbol_times                            : 'Multiplication Sign',
-        txtSymbol_div                              : 'Division Sign',
-        txtSymbol_factorial                        : 'Factorial',
-        txtSymbol_propto                           : 'Proportional To',
-        txtSymbol_less                             : 'Less Than',
-        txtSymbol_ll                               : 'Much Less Than',
-        txtSymbol_greater                          : 'Greater Than',
-        txtSymbol_gg                               : 'Much Greater Than',
-        txtSymbol_leq                              : 'Less Than or Equal To',
-        txtSymbol_geq                              : 'Greater Than or Equal To',
-        txtSymbol_mp                               : 'Minus Plus',
-        txtSymbol_cong                             : 'Approximately Equal To',
-        txtSymbol_approx                           : 'Almost Equal To',
-        txtSymbol_equiv                            : 'Identical To',
-        txtSymbol_forall                           : 'For All',
-        txtSymbol_additional                       : 'Complement',
-        txtSymbol_partial                          : 'Partial Differential',
-        txtSymbol_sqrt                             : 'Radical Sign',
-        txtSymbol_cbrt                             : 'Cube Root',
-        txtSymbol_qdrt                             : 'Fourth Root',
-        txtSymbol_cup                              : 'Union',
-        txtSymbol_cap                              : 'Intersection',
-        txtSymbol_emptyset                         : 'Empty Set',
-        txtSymbol_percent                          : 'Percentage',
-        txtSymbol_degree                           : 'Degrees',
-        txtSymbol_fahrenheit                       : 'Degrees Fahrenheit',
-        txtSymbol_celsius                          : 'Degrees Celsius',
-        txtSymbol_inc                              : 'Increment',
-        txtSymbol_nabla                            : 'Nabla',
-        txtSymbol_exists                           : 'There Exist',
-        txtSymbol_notexists                        : 'There Does Not Exist',
-        txtSymbol_in                               : 'Element Of',
-        txtSymbol_ni                               : 'Contains as Member',
-        txtSymbol_leftarrow                        : 'Left Arrow',
-        txtSymbol_uparrow                          : 'Up Arrow',
-        txtSymbol_rightarrow                       : 'Right Arrow',
-        txtSymbol_downarrow                        : 'Down Arrow',
-        txtSymbol_leftrightarrow                   : 'Left-Right Arrow',
-        txtSymbol_therefore                        : 'Therefore',
-        txtSymbol_plus                             : 'Plus',
-        txtSymbol_minus                            : 'Minus',
-        txtSymbol_not                              : 'Not Sign',
-        txtSymbol_ast                              : 'Asterisk Operator',
-        txtSymbol_bullet                           : 'Bulet Operator',
-        txtSymbol_vdots                            : 'Vertical Ellipsis',
-        txtSymbol_cdots                            : 'Midline Horizontal Ellipsis',
-        txtSymbol_rddots                           : 'Up Right Diagonal Ellipsis',
-        txtSymbol_ddots                            : 'Down Right Diagonal Ellipsis',
-        txtSymbol_aleph                            : 'Alef',
-        txtSymbol_beth                             : 'Bet',
-        txtSymbol_qed                              : 'End of Proof',
-        txtSymbol_alpha                            : 'Alpha',
-        txtSymbol_beta                             : 'Beta',
-        txtSymbol_gamma                            : 'Gamma',
-        txtSymbol_delta                            : 'Delta',
-        txtSymbol_varepsilon                       : 'Epsilon Variant',
-        txtSymbol_epsilon                          : 'Epsilon',
-        txtSymbol_zeta                             : 'Zeta',
-        txtSymbol_eta                              : 'Eta',
-        txtSymbol_theta                            : 'Theta',
-        txtSymbol_vartheta                         : 'Theta Variant',
-        txtSymbol_iota                             : 'Iota',
-        txtSymbol_kappa                            : 'Kappa',
-        txtSymbol_lambda                           : 'Lambda',
-        txtSymbol_mu                               : 'Mu',
-        txtSymbol_nu                               : 'Nu',
-        txtSymbol_xsi                              : 'Xi',
-        txtSymbol_o                                : 'Omicron',
-        txtSymbol_pi                               : 'Pi',
-        txtSymbol_varpi                            : 'Pi Variant',
-        txtSymbol_rho                              : 'Rho',
-        txtSymbol_varrho                           : 'Rho Variant',
-        txtSymbol_sigma                            : 'Sigma',
-        txtSymbol_varsigma                         : 'Sigma Variant',
-        txtSymbol_tau                              : 'Tau',
-        txtSymbol_upsilon                          : 'Upsilon',
-        txtSymbol_varphi                           : 'Phi Variant',
-        txtSymbol_phi                              : 'Phi',
-        txtSymbol_chi                              : 'Chi',
-        txtSymbol_psi                              : 'Psi',
-        txtSymbol_omega                            : 'Omega',
+        onPluginToolbarCustomMenuItems: function(action, data) {
+            if (!this._isDocReady) {
+                this._state.customPluginData = (this._state.customPluginData || []).concat([{action: action, data: data}]);
+                return;
+            }
+            var api = this.api;
+            this.toolbar && Common.UI.LayoutManager.addCustomMenuItems(action, data, function(guid, value) {
+                api && api.onPluginContextMenuItemClick(guid, value);
+            });
+        },
 
-        txtFractionVertical                        : 'Stacked Fraction',
-        txtFractionDiagonal                        : 'Skewed Fraction',
-        txtFractionHorizontal                      : 'Linear Fraction',
-        txtFractionSmall                           : 'Small Fraction',
-        txtFractionDifferential_1                  : 'Differential',
-        txtFractionDifferential_2                  : 'Differential',
-        txtFractionDifferential_3                  : 'Differential',
-        txtFractionDifferential_4                  : 'Differential',
-        txtFractionPi_2                            : 'Pi Over 2',
+        onDocumentReady: function() {
+            this._isDocReady = true;
+            var me = this;
+            this._state.customPluginData && this._state.customPluginData.forEach(function(plugin) {
+                me.onPluginToolbarCustomMenuItems(plugin.action, plugin.data);
+            });
+            this._state.customPluginData = null;
+        },
 
-        txtScriptSup                               : 'Superscript',
-        txtScriptSub                               : 'Subscript',
-        txtScriptSubSup                            : 'Subscript-Superscript',
-        txtScriptSubSupLeft                        : 'Left Subscript-Superscript',
-        txtScriptCustom_1                          : 'Script',
-        txtScriptCustom_2                          : 'Script',
-        txtScriptCustom_3                          : 'Script',
-        txtScriptCustom_4                          : 'Script',
+        onActiveTab: function(tab) {
+            (tab !== 'home') && Common.UI.TooltipManager.closeTip('insPivot');
+            (tab === 'view') ? Common.UI.TooltipManager.showTip('grayTheme') : Common.UI.TooltipManager.closeTip('grayTheme');
+        },
 
-        txtRadicalSqrt                             : 'Square Root',
-        txtRadicalRoot_n                           : 'Radical With Degree',
-        txtRadicalRoot_2                           : 'Square Root With Degree',
-        txtRadicalRoot_3                           : 'Cubic Root',
-        txtRadicalCustom_1                         : 'Radical',
-        txtRadicalCustom_2                         : 'Radical',
+        onClickTab: function(tab) {
+            this._state.showPivotTab = tab === 'pivot';
+        },
 
-        txtIntegral                                : 'Integral',
-        txtIntegralSubSup                          : 'Integral',
-        txtIntegralCenterSubSup                    : 'Integral',
-        txtIntegralDouble                          : 'Double Integral',
-        txtIntegralDoubleSubSup                    : 'Double Integral',
-        txtIntegralDoubleCenterSubSup              : 'Double Integral',
-        txtIntegralTriple                          : 'Triple Integral',
-        txtIntegralTripleSubSup                    : 'Triple Integral',
-        txtIntegralTripleCenterSubSup              : 'Triple Integral',
-        txtIntegralOriented                        : 'Contour Integral',
-        txtIntegralOrientedSubSup                  : 'Contour Integral',
-        txtIntegralOrientedCenterSubSup            : 'Contour Integral',
-        txtIntegralOrientedDouble                  : 'Surface Integral',
-        txtIntegralOrientedDoubleSubSup            : 'Surface Integral',
-        txtIntegralOrientedDoubleCenterSubSup      : 'Surface Integral',
-        txtIntegralOrientedTriple                  : 'Volume Integral',
-        txtIntegralOrientedTripleSubSup            : 'Volume Integral',
-        txtIntegralOrientedTripleCenterSubSup      : 'Volume Integral',
-        txtIntegral_dx                             : 'Differential x',
-        txtIntegral_dy                             : 'Differential y',
-        txtIntegral_dtheta                         : 'Differential theta',
-
-        txtLargeOperator_Sum                       : 'Summation',
-        txtLargeOperator_Sum_CenterSubSup          : 'Summation',
-        txtLargeOperator_Sum_SubSup                : 'Summation',
-        txtLargeOperator_Sum_CenterSub             : 'Summation',
-        txtLargeOperator_Sum_Sub                   : 'Summation',
-        txtLargeOperator_Prod                      : 'Product',
-        txtLargeOperator_Prod_CenterSubSup         : 'Product',
-        txtLargeOperator_Prod_SubSup               : 'Product',
-        txtLargeOperator_Prod_CenterSub            : 'Product',
-        txtLargeOperator_Prod_Sub                  : 'Product',
-        txtLargeOperator_CoProd                    : 'Co-Product',
-        txtLargeOperator_CoProd_CenterSubSup       : 'Co-Product',
-        txtLargeOperator_CoProd_SubSup             : 'Co-Product',
-        txtLargeOperator_CoProd_CenterSub          : 'Co-Product',
-        txtLargeOperator_CoProd_Sub                : 'Co-Product',
-        txtLargeOperator_Union                     : 'Union',
-        txtLargeOperator_Union_CenterSubSup        : 'Union',
-        txtLargeOperator_Union_SubSup              : 'Union',
-        txtLargeOperator_Union_CenterSub           : 'Union',
-        txtLargeOperator_Union_Sub                 : 'Union',
-        txtLargeOperator_Intersection              : 'Intersection',
-        txtLargeOperator_Intersection_CenterSubSup : 'Intersection',
-        txtLargeOperator_Intersection_SubSup       : 'Intersection',
-        txtLargeOperator_Intersection_CenterSub    : 'Intersection',
-        txtLargeOperator_Intersection_Sub          : 'Intersection',
-        txtLargeOperator_Disjunction               : 'Vee',
-        txtLargeOperator_Disjunction_CenterSubSup  : 'Vee',
-        txtLargeOperator_Disjunction_SubSup        : 'Vee',
-        txtLargeOperator_Disjunction_CenterSub     : 'Vee',
-        txtLargeOperator_Disjunction_Sub           : 'Vee',
-        txtLargeOperator_Conjunction               : 'Wedge',
-        txtLargeOperator_Conjunction_CenterSubSup  : 'Wedge',
-        txtLargeOperator_Conjunction_SubSup        : 'Wedge',
-        txtLargeOperator_Conjunction_CenterSub     : 'Wedge',
-        txtLargeOperator_Conjunction_Sub           : 'Wedge',
-        txtLargeOperator_Custom_1                  : 'Summation',
-        txtLargeOperator_Custom_2                  : 'Summation',
-        txtLargeOperator_Custom_3                  : 'Summation',
-        txtLargeOperator_Custom_4                  : 'Product',
-        txtLargeOperator_Custom_5                  : 'Union',
-
-        txtBracket_Round                           : 'Brackets',
-        txtBracket_Square                          : 'Brackets',
-        txtBracket_Curve                           : 'Brackets',
-        txtBracket_Angle                           : 'Brackets',
-        txtBracket_LowLim                          : 'Brackets',
-        txtBracket_UppLim                          : 'Brackets',
-        txtBracket_Line                            : 'Brackets',
-        txtBracket_LineDouble                      : 'Brackets',
-        txtBracket_Square_OpenOpen                 : 'Brackets',
-        txtBracket_Square_CloseClose               : 'Brackets',
-        txtBracket_Square_CloseOpen                : 'Brackets',
-        txtBracket_SquareDouble                    : 'Brackets',
-
-        txtBracket_Round_Delimiter_2               : 'Brackets with Separators',
-        txtBracket_Curve_Delimiter_2               : 'Brackets with Separators',
-        txtBracket_Angle_Delimiter_2               : 'Brackets with Separators',
-        txtBracket_Angle_Delimiter_3               : 'Brackets with Separators',
-        txtBracket_Round_OpenNone                  : 'Single Bracket',
-        txtBracket_Round_NoneOpen                  : 'Single Bracket',
-        txtBracket_Square_OpenNone                 : 'Single Bracket',
-        txtBracket_Square_NoneOpen                 : 'Single Bracket',
-        txtBracket_Curve_OpenNone                  : 'Single Bracket',
-        txtBracket_Curve_NoneOpen                  : 'Single Bracket',
-        txtBracket_Angle_OpenNone                  : 'Single Bracket',
-        txtBracket_Angle_NoneOpen                  : 'Single Bracket',
-        txtBracket_LowLim_OpenNone                 : 'Single Bracket',
-        txtBracket_LowLim_NoneNone                 : 'Single Bracket',
-        txtBracket_UppLim_OpenNone                 : 'Single Bracket',
-        txtBracket_UppLim_NoneOpen                 : 'Single Bracket',
-        txtBracket_Line_OpenNone                   : 'Single Bracket',
-        txtBracket_Line_NoneOpen                   : 'Single Bracket',
-        txtBracket_LineDouble_OpenNone             : 'Single Bracket',
-        txtBracket_LineDouble_NoneOpen             : 'Single Bracket',
-        txtBracket_SquareDouble_OpenNone           : 'Single Bracket',
-        txtBracket_SquareDouble_NoneOpen           : 'Single Bracket',
-        txtBracket_Custom_1                        : 'Case (Two Conditions)',
-        txtBracket_Custom_2                        : 'Cases (Three Conditions)',
-        txtBracket_Custom_3                        : 'Stack Object',
-        txtBracket_Custom_4                        : 'Stack Object',
-        txtBracket_Custom_5                        : 'Cases Example',
-        txtBracket_Custom_6                        : 'Binomial Coefficient',
-        txtBracket_Custom_7                        : 'Binomial Coefficient',
-
-        txtFunction_Sin                            : 'Sine Function',
-        txtFunction_Cos                            : 'Cosine Function',
-        txtFunction_Tan                            : 'Tangent Function',
-        txtFunction_Csc                            : 'Cosecant Function',
-        txtFunction_Sec                            : 'Secant Function',
-        txtFunction_Cot                            : 'Cotangent Function',
-        txtFunction_1_Sin                          : 'Inverse Sine Function',
-        txtFunction_1_Cos                          : 'Inverse Cosine Function',
-        txtFunction_1_Tan                          : 'Inverse Tangent Function',
-        txtFunction_1_Csc                          : 'Inverse Cosecant Function',
-        txtFunction_1_Sec                          : 'Inverse Secant Function',
-        txtFunction_1_Cot                          : 'Inverse Cotangent Function',
-        txtFunction_Sinh                           : 'Hyperbolic Sine Function',
-        txtFunction_Cosh                           : 'Hyperbolic Cosine Function',
-        txtFunction_Tanh                           : 'Hyperbolic Tangent Function',
-        txtFunction_Csch                           : 'Hyperbolic Cosecant Function',
-        txtFunction_Sech                           : 'Hyperbolic Secant Function',
-        txtFunction_Coth                           : 'Hyperbolic Cotangent Function',
-        txtFunction_1_Sinh                         : 'Hyperbolic Inverse Sine Function',
-        txtFunction_1_Cosh                         : 'Hyperbolic Inverse Cosine Function',
-        txtFunction_1_Tanh                         : 'Hyperbolic Inverse Tangent Function',
-        txtFunction_1_Csch                         : 'Hyperbolic Inverse Cosecant Function',
-        txtFunction_1_Sech                         : 'Hyperbolic Inverse Secant Function',
-        txtFunction_1_Coth                         : 'Hyperbolic Inverse Cotangent Function',
-        txtFunction_Custom_1                       : 'Sine theta',
-        txtFunction_Custom_2                       : 'Cos 2x',
-        txtFunction_Custom_3                       : 'Tangent formula',
-
-        txtAccent_Dot                              : 'Dot',
-        txtAccent_DDot                             : 'Double Dot',
-        txtAccent_DDDot                            : 'Triple Dot',
-        txtAccent_Hat                              : 'Hat',
-        txtAccent_Check                            : 'Check',
-        txtAccent_Accent                           : 'Acute',
-        txtAccent_Grave                            : 'Grave',
-        txtAccent_Smile                            : 'Breve',
-        txtAccent_Tilde                            : 'Tilde',
-        txtAccent_Bar                              : 'Bar',
-        txtAccent_DoubleBar                        : 'Double Overbar',
-        txtAccent_CurveBracketTop                  : 'Overbrace',
-        txtAccent_CurveBracketBot                  : 'Underbrace',
-        txtAccent_GroupTop                         : 'Grouping Character Above',
-        txtAccent_GroupBot                         : 'Grouping Character Below',
-        txtAccent_ArrowL                           : 'Leftwards Arrow Above',
-        txtAccent_ArrowR                           : 'Rightwards Arrow Above',
-        txtAccent_ArrowD                           : 'Right-Left Arrow Above',
-        txtAccent_HarpoonL                         : 'Leftwards Harpoon Above',
-        txtAccent_HarpoonR                         : 'Rightwards Harpoon Above',
-        txtAccent_BorderBox                        : 'Boxed Formula (With Placeholder)',
-        txtAccent_BorderBoxCustom                  : 'Boxed Formula (Example)',
-        txtAccent_BarTop                           : 'Overbar',
-        txtAccent_BarBot                           : 'Underbar',
-        txtAccent_Custom_1                         : 'Vector A',
-        txtAccent_Custom_2                         : 'ABC With Overbar',
-        txtAccent_Custom_3                         : 'x XOR y With Overbar',
-
-        txtLimitLog_LogBase                        : 'Logarithm',
-        txtLimitLog_Log                            : 'Logarithm',
-        txtLimitLog_Lim                            : 'Limit',
-        txtLimitLog_Min                            : 'Minimum',
-        txtLimitLog_Max                            : 'Maximum',
-        txtLimitLog_Ln                             : 'Natural Logarithm',
-        txtLimitLog_Custom_1                       : 'Limit Example',
-        txtLimitLog_Custom_2                       : 'Maximum Example',
-
-        txtOperator_ColonEquals                    : 'Colon Equal',
-        txtOperator_EqualsEquals                   : 'Equal Equal',
-        txtOperator_PlusEquals                     : 'Plus Equal',
-        txtOperator_MinusEquals                    : 'Minus Equal',
-        txtOperator_Definition                     : 'Equal to By Definition',
-        txtOperator_UnitOfMeasure                  : 'Measured By',
-        txtOperator_DeltaEquals                    : 'Delta Equal To',
-        txtOperator_ArrowL_Top                     : 'Leftwards Arrow Above',
-        txtOperator_ArrowR_Top                     : 'Rightwards Arrow Above',
-        txtOperator_ArrowL_Bot                     : 'Leftwards Arrow Below',
-        txtOperator_ArrowR_Bot                     : 'Rightwards Arrow Below',
-        txtOperator_DoubleArrowL_Top               : 'Leftwards Arrow Above',
-        txtOperator_DoubleArrowR_Top               : 'Rightwards Arrow Above',
-        txtOperator_DoubleArrowL_Bot               : 'Leftwards Arrow Below',
-        txtOperator_DoubleArrowR_Bot               : 'Rightwards Arrow Below',
-        txtOperator_ArrowD_Top                     : 'Right-Left Arrow Above',
-        txtOperator_ArrowD_Bot                     : 'Right-Left Arrow Above',
-        txtOperator_DoubleArrowD_Top               : 'Right-Left Arrow Below',
-        txtOperator_DoubleArrowD_Bot               : 'Right-Left Arrow Below',
-        txtOperator_Custom_1                       : 'Yileds',
-        txtOperator_Custom_2                       : 'Delta Yields',
-
-        txtMatrix_1_2                              : '1x2 Empty Matrix',
-        txtMatrix_2_1                              : '2x1 Empty Matrix',
-        txtMatrix_1_3                              : '1x3 Empty Matrix',
-        txtMatrix_3_1                              : '3x1 Empty Matrix',
-        txtMatrix_2_2                              : '2x2 Empty Matrix',
-        txtMatrix_2_3                              : '2x3 Empty Matrix',
-        txtMatrix_3_2                              : '3x2 Empty Matrix',
-        txtMatrix_3_3                              : '3x3 Empty Matrix',
-        txtMatrix_Dots_Center                      : 'Midline Dots',
-        txtMatrix_Dots_Baseline                    : 'Baseline Dots',
-        txtMatrix_Dots_Vertical                    : 'Vertical Dots',
-        txtMatrix_Dots_Diagonal                    : 'Diagonal Dots',
-        txtMatrix_Identity_2                       : '2x2 Identity Matrix',
-        txtMatrix_Identity_2_NoZeros               : '3x3 Identity Matrix',
-        txtMatrix_Identity_3                       : '3x3 Identity Matrix',
-        txtMatrix_Identity_3_NoZeros               : '3x3 Identity Matrix',
-        txtMatrix_2_2_RoundBracket                 : 'Empty Matrix with Brackets',
-        txtMatrix_2_2_SquareBracket                : 'Empty Matrix with Brackets',
-        txtMatrix_2_2_LineBracket                  : 'Empty Matrix with Brackets',
-        txtMatrix_2_2_DLineBracket                 : 'Empty Matrix with Brackets',
-        txtMatrix_Flat_Round                       : 'Sparse Matrix',
-        txtMatrix_Flat_Square                      : 'Sparse Matrix',
-        txtExpandSort: 'The data next to the selection will not be sorted. Do you want to expand the selection to include the adjacent data or continue with sorting the currently selected cells only?',
-        txtExpand: 'Expand and sort',
-        txtSorting: 'Sorting',
-        txtSortSelected: 'Sort selected',
-        textLongOperation: 'Long operation',
-        warnLongOperation: 'The operation you are about to perform might take rather much time to complete.<br>Are you sure you want to continue?',
-        txtInvalidRange: 'ERROR! Invalid cells range',
-        errorMaxRows: 'ERROR! The maximum number of data series per chart is 255.',
-        errorStockChart: 'Incorrect row order. To build a stock chart place the data on the sheet in the following order:<br> opening price, max price, min price, closing price.',
-        textPivot: 'Pivot Table',
-        txtTable_TableStyleMedium: 'Table Style Medium',
-        txtTable_TableStyleDark: 'Table Style Dark',
-        txtTable_TableStyleLight: 'Table Style Light',
-        txtGroupTable_Custom: 'Custom',
-        txtGroupTable_Light: 'Light',
-        txtGroupTable_Medium: 'Medium',
-        txtGroupTable_Dark: 'Dark',
-        txtGroupCell_Custom: 'Custom',
-        txtGroupCell_GoodBadAndNeutral: 'Good, Bad, and Neutral',
-        txtGroupCell_DataAndModel: 'Data and Model',
-        txtGroupCell_TitlesAndHeadings: 'Titles and Headings',
-        txtGroupCell_ThemedCallStyles: 'Themed Call Styles',
-        txtGroupCell_NumberFormat: 'Number Format',
-        txtGroupCell_NoName: 'No name',
-        textInsert: 'Insert',
-        txtInsertCells: 'Insert Cells',
-        txtDeleteCells: 'Delete Cells',
-        errorComboSeries: 'To create a combination chart, select at least two series of data.',
-        textDirectional: 'Directional',
-        textShapes: 'Shapes',
-        textIndicator: 'Indicators',
-        textRating: 'Ratings',
-        txtLockSort: 'Data is found next to your selection, but you do not have sufficient permissions to change those cells.<br>Do you wish to continue with the current selection?',
-        textRecentlyUsed: 'Recently Used',
-        errorMaxPoints: 'The maximum number of points in series per chart is 4096.',
-        warnNoRecommended: 'To create a chart, select the cells that contain the data you\'d like to use.<br>If you have names for the rows and columns and you\'d like use them as labels, include them in your selection.'
-
+        onTabCollapse: function(tab) {
+            Common.UI.TooltipManager.closeTip('grayTheme');
+        }
     }, SSE.Controllers.Toolbar || {}));
 });

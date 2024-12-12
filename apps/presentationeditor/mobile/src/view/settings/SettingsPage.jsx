@@ -74,7 +74,7 @@ const SettingsPage = inject('storeAppOptions', 'storeToolbarSettings', 'storePre
         if (appOptions.customization) {
             _canHelp = appOptions.customization.help !== false;
             _canFeedback = appOptions.customization.feedback !== false;
-            _canDisplayInfo = appOptions.customization.info !== false;
+            _canDisplayInfo = appOptions.customization.mobile?.info !== false;
         }
     }
     

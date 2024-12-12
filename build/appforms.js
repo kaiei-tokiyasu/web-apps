@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -60,7 +60,10 @@ module.exports = (grunt) => {
                 },
                 compile: {
                     options: packageFile.forms.js.requirejs.options
-                }
+                },
+                postload: {
+                    options: packageFile.forms.js.postload.options
+                },
             },
 
             less: {
@@ -127,11 +130,36 @@ module.exports = (grunt) => {
                     src: [packageFile.forms.js.requirejs.options.out],
                     dest: packageFile.forms.js.requirejs.options.out
                 },
+                postload: {
+                    src: packageFile.forms.js.postload.options.out,
+                    dest: packageFile.forms.js.postload.options.out,
+                },
+                iecompat: {
+                    options: {
+                        sourceMap: false,
+                    },
+                    files: [{
+                        expand: true,
+                        cwd: packageFile.forms.js.babel.files[0].dest,
+                        src: `*.js`,
+                        dest: packageFile.forms.js.babel.files[0].dest
+                    }]
+                },
+            },
+
+            babel: {
+                options: {
+                    sourceMap: false,
+                    presets: [['@babel/preset-env', {modules: false}]]
+                },
+                dist: {
+                    files: packageFile.forms.js.babel.files
+                }
             },
         });
     });
 
     grunt.registerTask('deploy-app-forms', ['forms-app-init', 'clean:prebuild', /*'imagemin',*/ 'less',
-                                                            'requirejs', 'terser', 'concat', 'copy', 'inline', /*'json-minify',*/
+                                                            'requirejs', 'babel', 'terser', 'concat', 'copy', 'inline', /*'json-minify',*/
                                                             'replace:varsEnviroment', /*'replace:prepareHelp',*/ 'clean:postbuild']);
 }

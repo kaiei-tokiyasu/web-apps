@@ -108,26 +108,67 @@ class MainPage extends Component {
         }
     };
 
+    touchMoveHandler (e) {
+        if (e.touches.length > 1 && !e.target.closest('#editor_sdk')) {
+            e.preventDefault();
+        }
+    }
+
+    gesturePreventHandler (e) {
+        e.preventDefault();
+    }
+
+    componentDidMount () {
+
+        document.addEventListener('touchmove', this.touchMoveHandler);
+
+        if (Device.ios) {
+            document.addEventListener('gesturestart', this.gesturePreventHandler);
+            document.addEventListener('gesturechange', this.gesturePreventHandler);
+            document.addEventListener('gestureend', this.gesturePreventHandler);
+        }
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener('touchmove', this.touchMoveHandler);
+
+        if (Device.ios) {
+            document.removeEventListener('gesturestart', this.gesturePreventHandler);
+            document.removeEventListener('gesturechange', this.gesturePreventHandler);
+            document.removeEventListener('gestureend', this.gesturePreventHandler);
+        }
+    }
+
     render() {
         const appOptions = this.props.storeAppOptions;
         const storeWorksheets = this.props.storeWorksheets;
+        const storeThemes = this.props.storeThemes;
+        const colorTheme = storeThemes.colorTheme;
         const wsProps = storeWorksheets.wsProps;
         const wsLock = storeWorksheets.wsLock;
         const config = appOptions.config;
-        const isShowPlaceholder = !appOptions.isDocReady && (!config.customization || !(config.customization.loaderName || config.customization.loaderLogo));
+        const { customization = {} } = config;
+        const isShowPlaceholder = !appOptions.isDocReady && (!customization || !(customization.loaderName || customization.loaderLogo));
 
-        let isHideLogo = true,
-            isCustomization = true,
-            isBranding = true;
+        let isBranding = true,
+            isHideLogo = true,
+            customLogoImage = '',
+            customLogoUrl = '';
 
-        if (!appOptions.isDisconnected && config?.customization) {
-            isCustomization = !!(config.customization.loaderName || config.customization.loaderLogo);
+        if(!appOptions.isDisconnected && appOptions.isDocReady) {
+            const { logo } = customization;
             isBranding = appOptions.canBranding || appOptions.canBrandingExt;
-            isHideLogo = isCustomization && isBranding; 
-        }
+            
+            if(logo && isBranding) {
+                isHideLogo = logo.visible === false;
 
-        if ($$('.skl-container').length) {
-            $$('.skl-container').remove();
+                if(logo.image || logo.imageDark || logo.imageLight) {
+                    customLogoImage = colorTheme.type === 'dark' ? logo.imageDark ?? logo.image ?? logo.imageLight : logo.imageLight ?? logo.image ?? logo.imageDark;
+                    customLogoUrl = logo.url;
+                }
+            } else {
+                isHideLogo = false;
+            }
         }
 
         return (
@@ -143,11 +184,15 @@ class MainPage extends Component {
                     <Page name="home" className={`editor${!isHideLogo ? ' page-with-logo' : ''}`}>
                         {/* Top Navbar */}
                         <Navbar id='editor-navbar' className={`main-navbar${!isHideLogo ? ' navbar-with-logo' : ''}`}>
-                            {!isHideLogo && 
+                            {!isHideLogo &&
                                 <div className="main-logo" onClick={() => {
-                                    window.open(`${__PUBLISHER_URL__}`, "_blank");
+                                    window.open(`${customLogoImage && customLogoUrl ? customLogoUrl : __PUBLISHER_URL__}`, "_blank");
                                 }}>
-                                    <Icon icon="icon-logo"></Icon>
+                                    {customLogoImage ? 
+                                        <img className='custom-logo-image' src={customLogoImage} />
+                                    :
+                                        <Icon icon="icon-logo"></Icon>
+                                    }
                                 </div>
                             }
                             <Subnavbar>
@@ -213,4 +258,4 @@ class MainPage extends Component {
     }
 }
 
-export default inject("storeAppOptions", "storeWorksheets")(observer(MainPage));
+export default inject('storeAppOptions', 'storeWorksheets', 'storeThemes')(observer(MainPage));

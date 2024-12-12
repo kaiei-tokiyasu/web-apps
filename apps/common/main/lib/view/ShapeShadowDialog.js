@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -33,8 +33,7 @@
  *
  *  ShapeShadowDialog.js
  *
- *  Created by Alexey Koshelev on 27.09.23
- *  Copyright (c) 2023 Ascensio System SIA. All rights reserved.
+ *  Created on 27.09.23
  *
  */
 
@@ -113,7 +112,7 @@ define([
             this.oldTransparency = this.shadowProps.getTransparency();
             this.oldSize = this.shadowProps.getSize();
             this.oldAngle = this.shadowProps.getAngle();
-            this.oldDistance = this.shadowProps.getDistance();
+            this.oldDistance = this._mm2pt(this.shadowProps.getDistance());
 
 
             Common.Views.AdvancedSettingsWindow.prototype.initialize.call(this, this.options);
@@ -308,7 +307,7 @@ define([
 
         setDistance: function(value) {
             var shapeProps = new Asc.asc_CShapeProperty();
-            this.shadowProps.putDistance(value);
+            this.shadowProps.putDistance(this._pt2mm(value));
             shapeProps.asc_putShadow(this.shadowProps);
             this.methodApplySettings && this.methodApplySettings.call(this, shapeProps);
         },
@@ -319,7 +318,7 @@ define([
             this.shadowProps.putTransparency(transparency);
             this.shadowProps.putSize(size);
             this.shadowProps.putAngle(angle);
-            this.shadowProps.putDistance(distance);
+            this.shadowProps.putDistance(this._pt2mm(distance));
             shapeProps.asc_putShadow(this.shadowProps);
             this.methodApplySettings && this.methodApplySettings.call(this, shapeProps);
         },
@@ -330,6 +329,14 @@ define([
 
         getDefaultFocusableComponent: function () {
             return this.spinTransparency;
+        },
+
+        _pt2mm: function(value) {
+            return (value * 25.4 / 72.0);
+        },
+
+        _mm2pt: function(value) {
+            return (value * 72.0 / 25.4);
         },
         
         onPrimary: function() {

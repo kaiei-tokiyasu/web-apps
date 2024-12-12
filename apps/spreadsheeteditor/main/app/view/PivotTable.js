@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,8 +34,7 @@
  *
  *  View
  *
- *  Created by Julia.Radzhabova on 06.27.17
- *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *  Created on 06.27.17
  *
  */
 
@@ -50,11 +49,11 @@ define([
 
     SSE.Views.PivotTable = Common.UI.BaseView.extend(_.extend((function(){
         var template =
-            '<section id="pivot-table-panel" class="panel" data-tab="pivot">' +
-                '<div class="group">' +
-                    '<span class="btn-slot text x-huge slot-add-pivot"></span>' +
-                '</div>' +
-                '<div class="separator long"></div>' +
+            '<section id="pivot-table-panel" class="panel" data-tab="pivot" role="tabpanel" aria-labelledby="pivot">' +
+                // '<div class="group">' +
+                //     '<span class="btn-slot text x-huge slot-add-pivot"></span>' +
+                // '</div>' +
+                // '<div class="separator long"></div>' +
                 '<div class="group">' +
                     '<span id="slot-btn-pivot-report-layout" class="btn-slot text x-huge"></span>' +
                     '<span id="slot-btn-pivot-blank-rows" class="btn-slot text x-huge"></span>' +
@@ -224,6 +223,7 @@ define([
                     disabled    : true,
                     lock        : [_set.lostConnect, _set.coAuth, _set.noPivot, _set.selRangeEdit, _set.pivotLock, _set.wsLock],
                     menu        : true,
+                    action: 'pivot-layout',
                     dataHint    : '1',
                     dataHintDirection: 'bottom',
                     dataHintOffset: 'small'
@@ -237,6 +237,7 @@ define([
                     disabled    : true,
                     lock        : [_set.lostConnect, _set.coAuth, _set.noPivot, _set.selRangeEdit, _set.pivotLock, _set.wsLock],
                     menu        : true,
+                    action: 'pivot-blank-rows',
                     dataHint    : '1',
                     dataHintDirection: 'bottom',
                     dataHintOffset: 'small'
@@ -250,6 +251,7 @@ define([
                     disabled    : true,
                     lock        : [_set.lostConnect, _set.coAuth, _set.noPivot, _set.selRangeEdit, _set.pivotLock, _set.wsLock],
                     menu        : true,
+                    action: 'pivot-subtotals',
                     dataHint    : '1',
                     dataHintDirection: 'bottom',
                     dataHintOffset: 'small'
@@ -263,6 +265,7 @@ define([
                     disabled    : true,
                     lock        : [_set.lostConnect, _set.coAuth, _set.noPivot, _set.selRangeEdit, _set.pivotLock, _set.wsLock],
                     menu        : true,
+                    action: 'pivot-grand-totals',
                     dataHint    : '1',
                     dataHintDirection: 'bottom',
                     dataHintOffset: 'small'
@@ -275,6 +278,7 @@ define([
                     caption: this.txtRefresh,
                     disabled    : true,
                     split       : true,
+                    action: 'pivot-refresh',
                     lock        : [_set.lostConnect, _set.coAuth, _set.noPivot, _set.selRangeEdit, _set.pivotLock, _set.wsLock],
                     dataHint    : '1',
                     dataHintDirection: 'bottom',
@@ -340,7 +344,7 @@ define([
                             menu.menuAlignEl = cmp.cmpEl;
                             menu.menuAlign = 'tl-tl';
                             var menuWidth = columnCount * (itemMargin + itemWidth) + 17, // for scroller
-                                buttonOffsetLeft = cmp.openButton.$el.offset().left;
+                                buttonOffsetLeft = Common.Utils.getOffset(cmp.openButton.$el).left;
                             if (menuWidth>Common.Utils.innerWidth())
                                 menuWidth = Math.max(Math.floor((Common.Utils.innerWidth()-17)/(itemMargin + itemWidth)), 2) * (itemMargin + itemWidth) + 17;
                             var offset = cmp.cmpEl.width() - cmp.openButton.$el.width() - Math.min(menuWidth, buttonOffsetLeft) - 1;
@@ -360,7 +364,7 @@ define([
                     dataHintOffset: '-16, 0'
                 });
                 this.lockedControls.push(this.pivotStyles);
-
+                Common.UI.LayoutManager.addControls(this.btnsAddPivot.concat(this.lockedControls));
                 Common.NotificationCenter.on('app:ready', this.onAppReady.bind(this));
             },
 

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,14 +34,11 @@
  *
  *    Contains views for menu 'File'
  *
- *    Created by Maxim Kadushkin on 20 February 2014
- *    Copyright (c) 2018 Ascensio System SIA. All rights reserved.
+ *    Created on 20 February 2014
  *
  */
 
-define([
-    'common/main/lib/view/DocumentAccessDialog'
-], function () {
+define([], function () {
     'use strict';
 
     !PDFE.Views.FileMenuPanels && (PDFE.Views.FileMenuPanels = {});
@@ -118,7 +115,7 @@ define([
 
             this.$el.html(this.template({rows:this.formats,
                 fileType: (this.fileType || 'docx').toLowerCase(),
-                header: /*this.textDownloadAs*/ Common.Locale.get('btnDownloadCaption', {name:'DE.Views.FileMenu', default:this.textDownloadAs})}));
+                header: /*this.textDownloadAs*/ Common.Locale.get('btnDownloadCaption', {name:'PDFE.Views.FileMenu', default:this.textDownloadAs})}));
 
             $('.btn-doc-format',this.el).on('click', _.bind(this.onFormatClick,this));
 
@@ -236,7 +233,7 @@ define([
 
             this.$el.html(this.template({rows:this.formats,
                 fileType: (this.fileType || 'docx').toLowerCase(),
-                header: /*this.textSaveCopyAs*/ Common.Locale.get('btnSaveCopyAsCaption', {name:'DE.Views.FileMenu', default:this.textSaveCopyAs})}));
+                header: /*this.textSaveCopyAs*/ Common.Locale.get('btnSaveCopyAsCaption', {name:'PDFE.Views.FileMenu', default:this.textSaveCopyAs})}));
             $('.btn-doc-format',this.el).on('click', _.bind(this.onFormatClick,this));
 
             if (_.isUndefined(this.scroller)) {
@@ -306,7 +303,7 @@ define([
                     '<td colspan="2" class="subgroup-name"><label><%= scope.strCoAuthMode %></label></td>',
                 '</tr>',
                 '<tr class="coauth changes-mode">',
-                    '<td colspan="2"><div style="display: flex;"><div id="fms-rb-coauth-mode-fast"></div>',
+                    '<td colspan="2"><div style="display: flex;" role="radiogroup" aria-owns="fms-rb-coauth-mode-strict"><div id="fms-rb-coauth-mode-fast"></div>',
                     '<span style ="display: flex; flex-direction: column;"><label><%= scope.strFast %></label>',
                     '<label class="comment-text"><%= scope.txtFastTip %></label></span></div>',
                     '</td>',
@@ -322,7 +319,7 @@ define([
                     '<td colspan="2" class="subgroup-name"><label><%= scope.strShowChanges %></label></td>',
                 '</tr>',
                 '<tr class="coauth changes-show">',
-                    '<td colspan="2"><div id="fms-rb-show-changes-none"></div></td>',
+                    '<td colspan="2" role="radiogroup" aria-owns="fms-rb-show-changes-all fms-rb-show-changes-last"><div id="fms-rb-show-changes-none"></div></td>',
                 '</tr>',
                 '<tr class="coauth changes-show">',
                     '<td colspan="2"><div id="fms-rb-show-changes-all"></div></td>',
@@ -330,11 +327,32 @@ define([
                 '<tr class="coauth changes-show">',
                     '<td colspan="2"><div id="fms-rb-show-changes-last"></div></td>',
                 '</tr>','<tr class="divider coauth changes-show"></tr>',
+                '<tr class="live-viewer">',
+                    '<td colspan="2"><div id="fms-chb-live-viewer"></div></td>',
+                '</tr>',
+                '<tr class="divider live-viewer"></tr>',
                 '<tr class="comments">',
                     '<td colspan="2"><div id="fms-chb-live-comment"></div></td>',
                 '</tr>',
                 '<tr class="comments">',
                     '<td colspan="2"><div id="fms-chb-resolved-comment"></div></td>',
+                '</tr>',
+                '<tr class ="collaboration divider-group"></tr>',
+                '<tr>',
+                    '<td colspan="2" class="group-name"><label><%= scope.txtAppearance %></label></td>',
+                '</tr>',
+                '<tr class="themes">',
+                    '<td><label><%= scope.strTheme %></label></td>',
+                '<td>',
+                    '<div><div id="fms-cmb-theme"></div>',
+                    '<div id="fms-chb-dark-mode"></div></div></td>',
+                '</tr>',
+                '<tr class="tab-style">',
+                    '<td><label><%= scope.strTabStyle %></label></td>',
+                    '<td><div id="fms-cmb-tab-style"></div></td>',
+                '</tr>',
+                '<tr class="tab-background">',
+                    '<td colspan="2"><div id="fms-chb-tab-background"></div></td>',
                 '</tr>',
                 '<tr class ="collaboration divider-group"></tr>',
                 '<tr>',
@@ -346,20 +364,21 @@ define([
                 '<tr>',
                     '<td colspan="2"><div id="fms-chb-use-alt-key"></div></td>',
                 '</tr>',
-                '<tr class="ui-rtl">',
-                    '<td colspan="2"><div id="fms-chb-rtl-ui" style="display: inline-block;"></div><span class="beta-hint">Beta</span></td>',
+                '<tr class="edit">',
+                    '<td colspan="2"><div id="fms-chb-annotation-bar"></div></td>',
                 '</tr>',
-                '<tr class="quick-print">',
+                /*'<tr class="quick-print">',
                     '<td colspan="2"><div style="display: flex;"><div id="fms-chb-quick-print"></div>',
                     '<span style ="display: flex; flex-direction: column;"><label><%= scope.txtQuickPrint %></label>',
                     '<label class="comment-text"><%= scope.txtQuickPrintTip %></label></span></div>',
                     '</td>',
+                '</tr>',*/
+                '<tr class="edit quick-access">',
+                    '<td colspan="2"><button type="button" class="btn btn-text-default" id="fms-btn-customize-quick-access" style="width:auto;display:inline-block;padding-right:10px;padding-left:10px;" data-hint="2" data-hint-direction="bottom" data-hint-offset="medium"><%= scope.txtCustomizeQuickAccess %></button></div></td>',
                 '</tr>',
-                '<tr class="themes">',
-                    '<td><label><%= scope.strTheme %></label></td>',
-                    '<td>',
-                        '<div><div id="fms-cmb-theme"></div>',
-                        '<div id="fms-chb-dark-mode"></div></div></td>',
+                '<tr class="edit-pdf">',
+                    '<td><label><%= scope.strUnit %></label></td>',
+                    '<td><span id="fms-cmb-unit"></span></td>',
                 '</tr>',
                 '<tr>',
                     '<td><label><%= scope.strZoom %></label></td>',
@@ -405,6 +424,14 @@ define([
                 dataHintOffset: 'small'
             });
             (Common.Utils.isIE || Common.Utils.isMac && Common.Utils.isGecko) && this.chUseAltKey.$el.parent().parent().hide();
+
+            this.chUseAnnotateBar = new Common.UI.CheckBox({
+                el: $markup.findById('#fms-chb-annotation-bar'),
+                labelText: this.txtUseAnnotateBar,
+                dataHint: '2',
+                dataHintDirection: 'left',
+                dataHintOffset: 'small'
+            });
 
             this.chScreenReader = new Common.UI.CheckBox({
                 el: $markup.findById('#fms-chb-scrn-reader'),
@@ -459,7 +486,7 @@ define([
                 el          : $markup.findById('#fms-cmb-zoom'),
                 style       : 'width: 160px;',
                 editable    : false,
-                menuCls     : 'menu-aligned',
+                restoreMenuHeightAndTop: true,
                 cls         : 'input-group-nr',
                 restoreMenuHeight: false,
                 menuStyle   : 'min-width:100%; max-height: 157px;',
@@ -492,7 +519,8 @@ define([
                 name        : 'coauth-mode',
                 dataHint: '2',
                 dataHintDirection: 'left',
-                dataHintOffset: 'small'
+                dataHintOffset: 'small',
+                ariaLabel: this.strFast + ' ' + this.txtFastTip
             });
             this.rbCoAuthModeFast.on('change', function(field, newValue, eOpts){
                 if (newValue) {
@@ -507,7 +535,8 @@ define([
                 name        : 'coauth-mode',
                 dataHint: '2',
                 dataHintDirection: 'left',
-                dataHintOffset: 'small'
+                dataHintOffset: 'small',
+                ariaLabel: this.strStrict + ' ' + this.txtStrictTip
             });
             this.rbCoAuthModeStrict.on('change', function(field, newValue, eOpts){
                 newValue && me.onChangeCoAuthMode(0);
@@ -541,6 +570,13 @@ define([
                 dataHintOffset: 'small'
             });
 
+            this.chLiveViewer = new Common.UI.CheckBox({
+                el: $markup.findById('#fms-chb-live-viewer'),
+                labelText: this.strShowOthersChanges,
+                dataHint: '2',
+                dataHintDirection: 'left',
+                dataHintOffset: 'small'
+            });
             /** coauthoring end **/
 
             var itemsTemplate =
@@ -553,7 +589,7 @@ define([
                 el          : $markup.find('#fms-cmb-font-render'),
                 style       : 'width: 160px;',
                 editable    : false,
-                menuCls     : 'menu-aligned',
+                restoreMenuHeightAndTop: true,
                 menuStyle   : 'min-width:100%;',
                 cls         : 'input-group-nr',
                 itemsTemplate: itemsTemplate,
@@ -569,12 +605,34 @@ define([
             });
             this.cmbFontRender.on('selected', _.bind(this.onFontRenderSelected, this));
 
+            this.cmbUnit = new Common.UI.ComboBox({
+                el          : $markup.findById('#fms-cmb-unit'),
+                style       : 'width: 160px;',
+                editable    : false,
+                restoreMenuHeightAndTop: true,
+                menuStyle   : 'min-width:100%;',
+                cls         : 'input-group-nr',
+                data        : [
+                    { value: Common.Utils.Metric.c_MetricUnits['cm'], displayValue: this.txtCm },
+                    { value: Common.Utils.Metric.c_MetricUnits['pt'], displayValue: this.txtPt },
+                    { value: Common.Utils.Metric.c_MetricUnits['inch'], displayValue: this.txtInch }
+                ],
+                dataHint: '2',
+                dataHintDirection: 'bottom',
+                dataHintOffset: 'big'
+            });
+
+            this.btnCustomizeQuickAccess = new Common.UI.Button({
+                el: $markup.findById('#fms-btn-customize-quick-access')
+            });
+            this.btnCustomizeQuickAccess.on('click', _.bind(this.customizeQuickAccess, this));
+
             this.cmbTheme = new Common.UI.ComboBox({
                 el          : $markup.findById('#fms-cmb-theme'),
                 style       : 'width: 160px;',
                 menuStyle   : 'min-width:100%;',
                 editable    : false,
-                menuCls     : 'menu-aligned',
+                restoreMenuHeightAndTop: true,
                 cls         : 'input-group-nr',
                 dataHint: '2',
                 dataHintDirection: 'bottom',
@@ -596,15 +654,31 @@ define([
                 })).on('click', _.bind(me.applySettings, me));
             });
 
-            this.chRTL = new Common.UI.CheckBox({
-                el: $markup.findById('#fms-chb-rtl-ui'),
-                labelText: this.strRTLSupport,
+            this.cmbTabStyle = new Common.UI.ComboBox({
+                el          : $markup.findById('#fms-cmb-tab-style'),
+                style       : 'width: 160px;',
+                menuStyle   : 'min-width:100%;',
+                editable    : false,
+                restoreMenuHeightAndTop: true,
+                cls         : 'input-group-nr',
+                data        : [
+                    {value: 'fill', displayValue: this.textFill},
+                    {value: 'line', displayValue: this.textLine}
+                ],
+                dataHint: '2',
+                dataHintDirection: 'bottom',
+                dataHintOffset: 'big'
+            });
+
+            this.chTabBack = new Common.UI.CheckBox({
+                el: $markup.findById('#fms-chb-tab-background'),
+                labelText: this.txtTabBack,
                 dataHint: '2',
                 dataHintDirection: 'left',
                 dataHintOffset: 'small'
             });
 
-            this.chQuickPrint = new Common.UI.CheckBox({
+            /*this.chQuickPrint = new Common.UI.CheckBox({
                 el: $markup.findById('#fms-chb-quick-print'),
                 labelText: '',
                 dataHint: '2',
@@ -614,7 +688,7 @@ define([
 
             this.chQuickPrint.$el.parent().on('click', function (){
                 me.chQuickPrint.setValue(!me.chQuickPrint.isChecked());
-            });
+            });*/
 
             this.pnlSettings = $markup.find('.flex-settings').addBack().filter('.flex-settings');
             this.pnlApply = $markup.find('.fms-flex-apply').addBack().filter('.fms-flex-apply');
@@ -656,6 +730,11 @@ define([
                 this.pnlSettings.css('overflow', scrolled ? 'hidden' : 'visible');
                 this.scroller.update();
                 this.pnlSettings.toggleClass('bordered', this.scroller.isVisible());
+                this.cmbZoom.options.menuAlignEl = scrolled ? this.pnlSettings : null;
+                this.cmbUnit.options.menuAlignEl = scrolled ? this.pnlSettings : null;
+                this.cmbFontRender.options.menuAlignEl = scrolled ? this.pnlSettings : null;
+                this.cmbTheme.options.menuAlignEl = scrolled ? this.pnlSettings : null;
+                this.cmbTabStyle.options.menuAlignEl = scrolled ? this.pnlSettings : null;
             }
         },
 
@@ -663,26 +742,32 @@ define([
             this.mode = mode;
 
             var fast_coauth = Common.Utils.InternalSettings.get("pdfe-settings-coauthmode"),
-                canPDFSave = (mode.isPDFAnnotate || mode.isPDFEdit) && !mode.isOffline;
+                canPDFSave = mode.isEdit && (mode.isPDFAnnotate || mode.isPDFEdit) && mode.canSaveToFile;
 
             $('tr.edit', this.el)[mode.isEdit?'show':'hide']();
-            $('tr.autosave', this.el)[mode.isEdit && canPDFSave && (mode.canChangeCoAuthoring || !fast_coauth) ? 'show' : 'hide']();
+            $('tr.edit-pdf', this.el)[mode.isPDFEdit?'show':'hide']();
+            $('tr.autosave', this.el)[canPDFSave && (mode.canChangeCoAuthoring || !fast_coauth) ? 'show' : 'hide']();
             $('tr.forcesave', this.el)[mode.canForcesave && canPDFSave ? 'show' : 'hide']();
-            $('tr.editsave',this.el)[(mode.isEdit  || mode.canForcesave) && canPDFSave ? 'show' : 'hide']();
+            $('tr.editsave',this.el)[canPDFSave && (mode.canChangeCoAuthoring || !fast_coauth || mode.canForcesave) ? 'show' : 'hide']();
             if (this.mode.isDesktopApp && this.mode.isOffline) {
                 this.chAutosave.setCaption(this.textAutoRecover);
             }
             /** coauthoring begin **/
-            $('tr.collaboration', this.el)[mode.canCoAuthoring && !mode.isForm || mode.canViewReview ? 'show' : 'hide']();
-            $('tr.coauth.changes-mode', this.el)[mode.isEdit && !mode.isOffline && mode.canCoAuthoring && mode.canChangeCoAuthoring && canPDFSave ? 'show' : 'hide']();
-            $('tr.coauth.changes-show', this.el)[mode.isEdit && !mode.isOffline && mode.canCoAuthoring && canPDFSave ? 'show' : 'hide']();
-            $('tr.comments', this.el)[mode.canCoAuthoring && !mode.isForm ? 'show' : 'hide']();
-            $('tr.ui-rtl', this.el)[mode.uiRtl ? 'show' : 'hide']();
+            $('tr.collaboration', this.el)[mode.canCoAuthoring && mode.isEdit ? 'show' : 'hide']();
+            $('tr.coauth.changes-mode', this.el)[!mode.isOffline && mode.canCoAuthoring && mode.canChangeCoAuthoring && canPDFSave ? 'show' : 'hide']();
+            $('tr.coauth.changes-show', this.el)[!mode.isOffline && mode.canCoAuthoring && canPDFSave ? 'show' : 'hide']();
+            $('tr.live-viewer', this.el)[mode.canLiveView && !mode.isOffline && mode.canChangeCoAuthoring ? 'show' : 'hide']();
+            $('tr.comments', this.el)[mode.canCoAuthoring && mode.isEdit ? 'show' : 'hide']();
             /** coauthoring end **/
-
-            $('tr.quick-print', this.el)[mode.canQuickPrint && !(mode.customization && mode.customization.compactHeader && mode.isEdit) ? 'show' : 'hide']();
+            $('tr.tab-background', this.el)[!Common.Utils.isIE && Common.UI.FeaturesManager.canChange('tabBackground', true) ? 'show' : 'hide']();
+            $('tr.tab-style', this.el)[Common.UI.FeaturesManager.canChange('tabStyle', true) ? 'show' : 'hide']();
+            $('tr.quick-print', this.el)[mode.canQuickPrint && !(mode.compactHeader && mode.isEdit) ? 'show' : 'hide']();
             if ( !Common.UI.Themes.available() ) {
                 $('tr.themes, tr.themes + tr.divider', this.el).hide();
+            }
+
+            if (mode.compactHeader) {
+                $('tr.quick-access', this.el).hide();
             }
         },
 
@@ -694,6 +779,7 @@ define([
         updateSettings: function() {
             this.chUseAltKey.setValue(Common.Utils.InternalSettings.get("pdfe-settings-show-alt-hints"));
             this.chScreenReader.setValue(Common.Utils.InternalSettings.get("app-settings-screen-reader"));
+            this.chUseAnnotateBar.setValue(Common.Utils.InternalSettings.get("pdfe-settings-annot-bar"));
 
             var value = Common.Utils.InternalSettings.get("pdfe-settings-zoom");
             value = (value!==null) ? parseInt(value) : (this.mode.customization && this.mode.customization.zoom ? parseInt(this.mode.customization.zoom) : 100);
@@ -708,6 +794,8 @@ define([
             this.rbCoAuthModeFast.setValue(fast_coauth);
             this.rbCoAuthModeStrict.setValue(!fast_coauth);
             this.fillShowChanges(fast_coauth);
+
+            this.chLiveViewer.setValue(Common.Utils.InternalSettings.get("pdfe-settings-coauthmode"));
 
             value = Common.Utils.InternalSettings.get((fast_coauth) ? "pdfe-settings-showchanges-fast" : "pdfe-settings-showchanges-strict");
 
@@ -726,13 +814,18 @@ define([
             item && value && item.set('checked', !!value);
             item && value && this.cmbFontRender.cmpEl.find('#' + item.get('id') + ' a').addClass('checked');
 
+            value = Common.Utils.InternalSettings.get("pdfe-settings-unit");
+            item = this.cmbUnit.store.findWhere({value: value});
+            this.cmbUnit.setValue(item ? parseInt(item.get('value')) : Common.Utils.Metric.getDefaultMetric());
+            this._oldUnits = this.cmbUnit.getValue();
+
             value = Common.Utils.InternalSettings.get("pdfe-settings-autosave");
             this.chAutosave.setValue(value == 1);
 
             if (this.mode.canForcesave)
                 this.chForcesave.setValue(Common.Utils.InternalSettings.get("pdfe-settings-forcesave"));
 
-            this.chQuickPrint.setValue(Common.Utils.InternalSettings.get("pdfe-settings-quick-print-button"));
+            //this.chQuickPrint.setValue(Common.Utils.InternalSettings.get("pdfe-settings-quick-print-button"));
 
             var data = [];
             for (var t in Common.UI.Themes.map()) {
@@ -746,26 +839,35 @@ define([
             }
             this.chDarkMode.setValue(Common.UI.Themes.isContentThemeDark());
             this.chDarkMode.setDisabled(!Common.UI.Themes.isDarkTheme());
-            this.chRTL.setValue(Common.localStorage.getBool("ui-rtl", Common.Locale.isCurrentLanguageRtl()));
+            this.chTabBack.setValue(Common.Utils.InternalSettings.get("settings-tab-background")==='toolbar');
+            value = Common.Utils.InternalSettings.get("settings-tab-style");
+            item = this.cmbTabStyle.store.findWhere({value: value});
+            this.cmbTabStyle.setValue(item ? item.get('value') : 'fill');
         },
 
         applySettings: function() {
+            var canPDFSave = (this.mode.isPDFAnnotate || this.mode.isPDFEdit) && this.mode.canSaveToFile;
             Common.UI.Themes.setTheme(this.cmbTheme.getValue());
             if (!this.chDarkMode.isDisabled() && (this.chDarkMode.isChecked() !== Common.UI.Themes.isContentThemeDark()))
                 Common.UI.Themes.toggleContentTheme();
             Common.localStorage.setItem("pdfe-settings-show-alt-hints", this.chUseAltKey.isChecked() ? 1 : 0);
             Common.Utils.InternalSettings.set("pdfe-settings-show-alt-hints", Common.localStorage.getBool("pdfe-settings-show-alt-hints"));
+
             Common.localStorage.setItem("pdfe-settings-zoom", this.cmbZoom.getValue());
-            Common.Utils.InternalSettings.set("pdfe-settings-zoom", Common.localStorage.getItem("pdfe-settings-zoom"));
+
             Common.localStorage.setItem("app-settings-screen-reader", this.chScreenReader.isChecked() ? 1 : 0);
+            Common.localStorage.setItem("pdfe-settings-annot-bar", this.chUseAnnotateBar.isChecked() ? 1 : 0);
+            Common.Utils.InternalSettings.set("pdfe-settings-annot-bar", Common.localStorage.getBool("pdfe-settings-annot-bar"));
 
             /** coauthoring begin **/
             Common.Utils.InternalSettings.set("pdfe-settings-livecomment", this.chLiveComment.isChecked());
             Common.Utils.InternalSettings.set("pdfe-settings-resolvedcomment", this.chResolvedComment.isChecked());
-            if (this.mode.isEdit && !this.mode.isOffline && this.mode.canCoAuthoring) {
+            if (this.mode.isEdit && !this.mode.isOffline && this.mode.canCoAuthoring && canPDFSave) {
                 this.mode.canChangeCoAuthoring && Common.localStorage.setItem("pdfe-settings-coauthmode", this.rbCoAuthModeFast.getValue() ? 1 : 0 );
                 Common.localStorage.setItem(this.rbCoAuthModeFast.getValue() ? "pdfe-settings-showchanges-fast" : "pdfe-settings-showchanges-strict",
                     this.rbShowChangesNone.getValue()?'none':this.rbShowChangesLast.getValue()?'last':'all');
+            } else if (this.mode.canLiveView && !this.mode.isOffline && this.mode.canChangeCoAuthoring) { // viewer
+                Common.localStorage.setItem("pdfe-settings-view-coauthmode", this.chLiveViewer.isChecked() ? 1 : 0);
             }
             /** coauthoring end **/
             Common.localStorage.setItem("pdfe-settings-fontrender", this.cmbFontRender.getValue());
@@ -776,24 +878,21 @@ define([
             if (this.mode.canForcesave)
                 Common.localStorage.setItem("pdfe-settings-forcesave", this.chForcesave.isChecked() ? 1 : 0);
 
-            var isRtlChanged = this.chRTL.$el.is(':visible') && Common.localStorage.getBool("ui-rtl", Common.Locale.isCurrentLanguageRtl()) !== this.chRTL.isChecked();
-            Common.localStorage.setBool("ui-rtl", this.chRTL.isChecked());
-            Common.localStorage.setBool("pdfe-settings-quick-print-button", this.chQuickPrint.isChecked());
+            Common.localStorage.setItem("pdfe-settings-unit", this.cmbUnit.getValue());
 
+            //Common.localStorage.setBool("pdfe-settings-quick-print-button", this.chQuickPrint.isChecked());
+            if (!Common.Utils.isIE && Common.UI.FeaturesManager.canChange('tabBackground', true)) {
+                Common.UI.TabStyler.setBackground(this.chTabBack.isChecked() ? 'toolbar' : 'header');
+            }
+            if (Common.UI.FeaturesManager.canChange('tabStyle', true)) {
+                Common.UI.TabStyler.setStyle(this.cmbTabStyle.getValue());
+            }
             Common.localStorage.save();
 
             if (this.menu) {
                 this.menu.fireEvent('settings:apply', [this.menu]);
-            }
-
-            if (isRtlChanged) {
-                var config = {
-                    title: this.txtWorkspaceSettingChange,
-                    msg: this.txtRestartEditor,
-                    iconCls: 'warn',
-                    buttons: ['ok']
-                };
-                Common.UI.alert(config);
+                if (this._oldUnits !== this.cmbUnit.getValue())
+                    Common.NotificationCenter.trigger('settings:unitschanged', this);
             }
         },
 
@@ -820,6 +919,24 @@ define([
             this._fontRender = combo.getValue();
         },
 
+        customizeQuickAccess: function () {
+            if (this.dlgQuickAccess && this.dlgQuickAccess.isVisible()) return;
+            this.dlgQuickAccess = new Common.Views.CustomizeQuickAccessDialog({
+                showSave: this.mode.showSaveButton,
+                showPrint: this.mode.canPrint && this.mode.twoLevelHeader,
+                showQuickPrint: this.mode.canQuickPrint && this.mode.twoLevelHeader,
+                mode: this.mode,
+                props: {
+                    save: Common.localStorage.getBool('pdfe-quick-access-save', true),
+                    print: Common.localStorage.getBool('pdfe-quick-access-print', true),
+                    quickPrint: Common.localStorage.getBool('pdfe-quick-access-quick-print', true),
+                    undo: Common.localStorage.getBool('pdfe-quick-access-undo', true),
+                    redo: Common.localStorage.getBool('pdfe-quick-access-redo', true)
+                }
+            });
+            this.dlgQuickAccess.show();
+        },
+
         strZoom: 'Default Zoom Value',
         strShowChanges: 'Real-time Collaboration Changes',
         txtAll: 'View All',
@@ -839,7 +956,6 @@ define([
         txtFitWidth: 'Fit to Width',
         textForceSave: 'Save to Server',
         txtCacheMode: 'Default cache mode',
-        strRTLSupport: 'RTL interface',
         strTheme: 'Theme',
         txtDarkMode: 'Turn on document dark mode',
         txtEditingSaving: 'Editing and saving',
@@ -856,10 +972,20 @@ define([
         txtAdvancedSettings: 'Advanced Settings',
         txtQuickPrint: 'Show the Quick Print button in the editor header',
         txtQuickPrintTip: 'The document will be printed on the last selected or default printer',
-        txtWorkspaceSettingChange: 'Workspace setting (RTL interface) change',
-        txtRestartEditor: 'Please restart document editor so that your workspace settings can take effect',
         txtLastUsed: 'Last used',
-        txtScreenReader: 'Turn on screen reader support'
+        txtScreenReader: 'Turn on screen reader support',
+        strUnit: 'Unit of Measurement',
+        txtInch: 'Inch',
+        txtCm: 'Centimeter',
+        txtPt: 'Point',
+        txtUseAnnotateBar: 'Use the mini toolbar when selecting text',
+        txtCustomizeQuickAccess: 'Customize quick access',
+        txtTabBack: 'Use toolbar color as tabs background',
+        strTabStyle: 'Tab style',
+        textFill: 'Fill',
+        textLine: 'Line',
+        txtAppearance: 'Appearance'
+
     }, PDFE.Views.FileMenuPanels.Settings || {}));
 
     PDFE.Views.FileMenuPanels.CreateNew = Common.UI.BaseView.extend(_.extend({
@@ -868,7 +994,7 @@ define([
 
         events: function() {
             return {
-                'click .blank-document-btn':_.bind(this._onBlankDocument, this),
+                'click .blank-document':_.bind(this._onBlankDocument, this),
                 'click .thumb-list .thumb-wrap': _.bind(this._onDocumentTemplate, this)
             };
         },
@@ -877,8 +1003,8 @@ define([
             '<div class="header"><%= scope.txtCreateNew %></div>',
             '<div class="thumb-list">',
                 '<% if (blank) { %> ',
-                '<div class="blank-document">',
-                    '<div class="blank-document-btn" data-hint="2" data-hint-direction="left-top" data-hint-offset="2, 10">',
+                '<div class="blank-document" data-hint="2" data-hint-direction="left-top" data-hint-offset="14, 22">',
+                    '<div class="blank-document-btn">',
                         '<div class="btn-blank-format"><div class ="svg-format-blank"></div></div>',
                     '</div>',
                     '<div class="title"><%= scope.txtBlank %></div>',
@@ -962,140 +1088,137 @@ define([
 
             this.template = _.template([
             '<div class="flex-settings">',
-                '<div class="header">' + this.txtDocumentInfo + '</div>',
                 '<table class="main">',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtPlacement + '</label></td>',
-                        '<td class="right"><label id="id-info-placement">-</label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtOwner + '</label></td>',
-                        '<td class="right"><label id="id-info-owner">-</label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtUploaded + '</label></td>',
-                        '<td class="right"><label id="id-info-uploaded">-</label></td>',
-                    '</tr>',
-                    '<tr class="divider general"></tr>',
-                    '<tr class="divider general"></tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtPages + '</label></td>',
-                        '<td class="right"><label id="id-info-pages"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtParagraphs + '</label></td>',
-                        '<td class="right"><label id="id-info-paragraphs"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtWords + '</label></td>',
-                        '<td class="right"><label id="id-info-words"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtSymbols + '</label></td>',
-                        '<td class="right"><label id="id-info-symbols"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtSpaces + '</label></td>',
-                        '<td class="right"><label id="id-info-spaces"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                        '<td class="left"><label>' + this.txtPageSize + '</label></td>',
-                        '<td class="right"><label id="id-info-page-size"></label></td>',
-                    '</tr>',
-                    '<tr class="divider"></tr>',
-                    '<tr class="divider"></tr>',
+                    '<tbody><td class="header">' + this.txtDocumentInfo + '</td></tbody>',
+                    '<tbody>',
+                        '<tr>',
+                        '<td class="title"><label>' + this.txtCommon + '</label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtPlacement + '</label></td>',
+                            '<td class="right"><label id="id-info-placement">-</label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtOwner + '</label></td>',
+                            '<td class="right"><label id="id-info-owner">-</label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtUploaded + '</label></td>',
+                            '<td class="right"><label id="id-info-uploaded">-</label></td>',
+                        '</tr>',
+                        '<tr></tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtModifyDate + '</label></td>',
+                            '<td class="right"><label id="id-info-modify-date"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtModifyBy + '</label></td>',
+                            '<td class="right"><label id="id-info-modify-by"></label></td>',
+                        '</tr>',
+                        '<tr class="docx-info">',
+                            '<td class="left"><label>' + this.txtTitle + '</label></td>',
+                            '<td class="right"><div id="id-info-title"></div></td>',
+                        '</tr>',
+                        '<tr class="docx-info">',
+                            '<td class="left"><label>' + this.txtTags + '</label></td>',
+                            '<td class="right"><div id="id-info-tags"></div></td>',
+                        '</tr>',
+                        '<tr class="docx-info">',
+                            '<td class="left"><label>' + this.txtSubject + '</label></td>',
+                            '<td class="right"><div id="id-info-subject"></div></td>',
+                        '</tr>',
+                        '<tr class="docx-info">',
+                            '<td class="left"><label>' + this.txtComment + '</label></td>',
+                            '<td class="right"><div id="id-info-comment"></div></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtTitle + '</label></td>',
+                            '<td class="right"><label id="id-lbl-info-title"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtSubject + '</label></td>',
+                            '<td class="right"><label id="id-lbl-info-subject"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtCreated + '</label></td>',
+                            '<td class="right"><label id="id-info-date"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtAppName + '</label></td>',
+                            '<td class="right"><label id="id-info-appname"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtAuthor + '</label></td>',
+                            '<td class="right"><label id="id-lbl-info-author"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtPdfProducer + '</label></td>',
+                            '<td class="right"><label id="id-info-pdf-produce"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtPdfVer + '</label></td>',
+                            '<td class="right"><label id="id-info-pdf-ver"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtPdfTagged + '</label></td>',
+                            '<td class="right"><label id="id-info-pdf-tagged"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtFastWV + '</label></td>',
+                            '<td class="right"><label id="id-info-fast-wv"></label></td>',
+                        '</tr>',
+                        '<tr class="docx-info">',
+                            '<td class="left" style="vertical-align: top;"><label style="margin-top: 3px;">' + this.txtAuthor + '</label></td>',
+                            '<td class="right" style="vertical-align: top;"><div id="id-info-author">',
+                            '<table>',
+                                '<tr>',
+                                    '<td><div id="id-info-add-author"><input type="text" spellcheck="false" class="form-control" placeholder="' +  this.txtAddAuthor +'"></div></td>',
+                                '</tr>',
+                            '</table>',
+                            '</div></td>',
+                        '</tr>',
+                    '</tbody>',
+                    '<tbody>',
+                        '<tr>',
+                        '<td class="title"><label>' + this.txtStatistics + '</label></td>',
+                        '</tr>',,
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtPages + '</label></td>',
+                            '<td class="right"><label id="id-info-pages"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtParagraphs + '</label></td>',
+                            '<td class="right"><label id="id-info-paragraphs"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtWords + '</label></td>',
+                            '<td class="right"><label id="id-info-words"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtSymbols + '</label></td>',
+                            '<td class="right"><label id="id-info-symbols"></label></td>',
+                        '</tr>',
+                        '<tr>',
+                            '<td class="left"><label>' + this.txtSpaces + '</label></td>',
+                            '<td class="right"><label id="id-info-spaces"></label></td>',
+                        '</tr>',
+                        '<tr class="pdf-info">',
+                            '<td class="left"><label>' + this.txtPageSize + '</label></td>',
+                            '<td class="right"><label id="id-info-page-size"></label></td>',
+                        '</tr>',
+                    '</tbody>',
+                    '<tbody>',
+                        '<tr>',
+                            '<td class="left"></td>',
+                            '<td class="right"><button id="fminfo-btn-apply" class="btn normal dlg-btn primary" data-hint="2" data-hint-direction="bottom" data-hint-offset="big"><%= scope.okButtonText %></button></td>',
+                        '</tr>',
+                    '</tbody>',
                     // '<tr>',
                     //     '<td class="left"><label>' + this.txtEditTime + '</label></td>',
                     //     '<td class="right"><label id="id-info-edittime"></label></td>',
                     // '</tr>',
-                    '<tr class="docx-info">',
-                        '<td class="left"><label>' + this.txtTitle + '</label></td>',
-                        '<td class="right"><div id="id-info-title"></div></td>',
-                    '</tr>',
-                    '<tr class="docx-info">',
-                        '<td class="left"><label>' + this.txtTags + '</label></td>',
-                        '<td class="right"><div id="id-info-tags"></div></td>',
-                    '</tr>',
-                    '<tr class="docx-info">',
-                        '<td class="left"><label>' + this.txtSubject + '</label></td>',
-                        '<td class="right"><div id="id-info-subject"></div></td>',
-                    '</tr>',
-                    '<tr class="docx-info">',
-                        '<td class="left"><label>' + this.txtComment + '</label></td>',
-                        '<td class="right"><div id="id-info-comment"></div></td>',
-                    '</tr>',
-                    '<tr class="divider docx-info"></tr>',
-                    '<tr class="divider docx-info"></tr>',
-                    '<tr class="pdf-info">',
-                        '<td class="left"><label>' + this.txtTitle + '</label></td>',
-                        '<td class="right"><label id="id-lbl-info-title"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                        '<td class="left"><label>' + this.txtSubject + '</label></td>',
-                        '<td class="right"><label id="id-lbl-info-subject"></label></td>',
-                    '</tr>',
-                    '<tr class="divider pdf-info pdf-title"></tr>',
-                    '<tr class="divider pdf-info pdf-title"></tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtModifyDate + '</label></td>',
-                        '<td class="right"><label id="id-info-modify-date"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtModifyBy + '</label></td>',
-                        '<td class="right"><label id="id-info-modify-by"></label></td>',
-                    '</tr>',
-                    '<tr class="divider modify"></tr>',
-                    '<tr class="divider modify"></tr>',
-                    '<tr>',
-                        '<td class="left"><label>' + this.txtCreated + '</label></td>',
-                        '<td class="right"><label id="id-info-date"></label></td>',
-                    '</tr>',
-                    '<tr>',
-                         '<td class="left"><label>' + this.txtAppName + '</label></td>',
-                         '<td class="right"><label id="id-info-appname"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                        '<td class="left"><label>' + this.txtAuthor + '</label></td>',
-                        '<td class="right"><label id="id-lbl-info-author"></label></td>',
-                    '</tr>',
-                    '<tr class="divider pdf-info"></tr>',
-                    '<tr class="pdf-info">',
-                         '<td class="left"><label>' + this.txtPdfProducer + '</label></td>',
-                         '<td class="right"><label id="id-info-pdf-produce"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                         '<td class="left"><label>' + this.txtPdfVer + '</label></td>',
-                         '<td class="right"><label id="id-info-pdf-ver"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                         '<td class="left"><label>' + this.txtPdfTagged + '</label></td>',
-                         '<td class="right"><label id="id-info-pdf-tagged"></label></td>',
-                    '</tr>',
-                    '<tr class="pdf-info">',
-                         '<td class="left"><label>' + this.txtFastWV + '</label></td>',
-                         '<td class="right"><label id="id-info-fast-wv"></label></td>',
-                    '</tr>',
-                    '<tr class="docx-info">',
-                        '<td class="left" style="vertical-align: top;"><label style="margin-top: 3px;">' + this.txtAuthor + '</label></td>',
-                        '<td class="right" style="vertical-align: top;"><div id="id-info-author">',
-                            '<table>',
-                            '<tr>',
-                                '<td><div id="id-info-add-author"><input type="text" spellcheck="false" class="form-control" placeholder="' +  this.txtAddAuthor +'"></div></td>',
-                            '</tr>',
-                            '</table>',
-                        '</div></td>',
-                    '</tr>',
-                    '<tr style="height: 5px;"></tr>',
                 '</table>',
             '</div>',
-            '<div id="fms-flex-apply">',
-                '<table class="main">',
-                    '<tr>',
-                        '<td class="left"></td>',
-                        '<td class="right"><button id="fminfo-btn-apply" class="btn normal dlg-btn primary" data-hint="2" data-hint-direction="bottom" data-hint-offset="big"><%= scope.okButtonText %></button></td>',
-                    '</tr>',
-                '</table>',
-            '</div>'
             ].join(''));
 
             this.infoObj = {PageCount: 0, WordsCount: 0, ParagraphCount: 0, SymbolsCount: 0, SymbolsWSCount:0};
@@ -1241,7 +1364,6 @@ define([
             });
             this.btnApply.on('click', _.bind(this.applySettings, this));
 
-            this.pnlInfo = $markup.find('.flex-settings').addBack().filter('.flex-settings');
             this.pnlApply = $markup.findById('#fms-flex-apply');
 
             this.rendered = true;
@@ -1251,7 +1373,7 @@ define([
             this.$el = $(node).html($markup);
             if (_.isUndefined(this.scroller)) {
                 this.scroller = new Common.UI.Scroller({
-                    el: this.pnlInfo,
+                    el: this.$el,
                     suppressScrollX: true,
                     alwaysVisibleY: true
                 });
@@ -1284,7 +1406,6 @@ define([
         updateScroller: function(destroy) {
             if (this.scroller) {
                 this.scroller.update(destroy ? {} : undefined);
-                this.pnlInfo.toggleClass('bordered', this.scroller.isVisible());
             }
         },
 
@@ -1331,6 +1452,7 @@ define([
                 if (value) {
                     var lang = (this.mode.lang || 'en').replace('_', '-').toLowerCase();
                     try {
+                        if ( lang == 'ar-SA'.toLowerCase() ) lang = lang + '-u-nu-latn-ca-gregory';
                         this.lblDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
                     } catch (e) {
                         lang = 'en';
@@ -1358,6 +1480,7 @@ define([
                 if (value) {
                     var lang = (this.mode.lang || 'en').replace('_', '-').toLowerCase();
                     try {
+                        if ( lang == 'ar-SA'.toLowerCase() ) lang = lang + '-u-nu-latn-ca-gregory';
                         this.lblModifyDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
                     } catch (e) {
                         lang = 'en';
@@ -1408,6 +1531,7 @@ define([
                     value = new Date(value);
                     var lang = (this.mode.lang || 'en').replace('_', '-').toLowerCase();
                     try {
+                        if ( lang == 'ar-SA'.toLowerCase() ) lang = lang + '-u-nu-latn-ca-gregory';
                         this.lblDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
                     } catch (e) {
                         lang = 'en';
@@ -1422,6 +1546,7 @@ define([
                     value = new Date(value);
                     var lang = (this.mode.lang || 'en').replace('_', '-').toLowerCase();
                     try {
+                        if ( lang == 'ar-SA'.toLowerCase() ) lang = lang + '-u-nu-latn-ca-gregory';
                         this.lblModifyDate.text(value.toLocaleString(lang, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + value.toLocaleString(lang, {timeStyle: 'short'}));
                     } catch (e) {
                         lang = 'en';
@@ -1658,8 +1783,8 @@ define([
         txtYes: 'Yes',
         txtNo: 'No',
         txtPdfProducer: 'PDF Producer',
-        txtDocumentInfo: 'Document Info'
-
+        txtDocumentInfo: 'Document Info',
+        txtCommon: 'Common',
     }, PDFE.Views.FileMenuPanels.DocumentInfo || {}));
 
     PDFE.Views.FileMenuPanels.DocumentRights = Common.UI.BaseView.extend(_.extend({
@@ -2373,10 +2498,10 @@ define([
                     { value: 6, displayValue: ['Envelope DL', '11', '22', 'cm'], caption: 'Envelope DL', size: [110, 220]},
                     { value: 7, displayValue: ['Tabloid', '27,94', '43,18', 'cm'], caption: 'Tabloid', size: [279.4, 431.8]},
                     { value: 8, displayValue: ['A3', '29,7', '42', 'cm'], caption: 'A3', size: [297, 420]},
-                    { value: 9, displayValue: ['Tabloid Oversize', '30,48', '45,71', 'cm'], caption: 'Tabloid Oversize', size: [304.8, 457.1]},
+                    { value: 9, displayValue: ['Tabloid Oversize', '29,69', '45,72', 'cm'], caption: 'Tabloid Oversize', size: [296.9, 457.2]},
                     { value: 10, displayValue: ['ROC 16K', '19,68', '27,3', 'cm'], caption: 'ROC 16K', size: [196.8, 273]},
-                    { value: 11, displayValue: ['Envelope Choukei 3', '11,99', '23,49', 'cm'], caption: 'Envelope Choukei 3', size: [119.9, 234.9]},
-                    { value: 12, displayValue: ['Super B/A3', '33,02', '48,25', 'cm'], caption: 'Super B/A3', size: [330.2, 482.5]},
+                    { value: 11, displayValue: ['Envelope Choukei 3', '12', '23,5', 'cm'], caption: 'Envelope Choukei 3', size: [120, 235]},
+                    { value: 12, displayValue: ['Super B/A3', '30,5', '48,7', 'cm'], caption: 'Super B/A3', size: [305, 487]},
                     { value: 13, displayValue: ['A4', '84,1', '118,9', 'cm'], caption: 'A0', size: [841, 1189]},
                     { value: 14, displayValue: ['A4', '59,4', '84,1', 'cm'], caption: 'A1', size: [594, 841]},
                     { value: 16, displayValue: ['A4', '42', '59,4', 'cm'], caption: 'A2', size: [420, 594]},
@@ -2429,8 +2554,7 @@ define([
                 takeFocusOnClose: true,
                 cls: 'input-group-nr',
                 data: [
-                    { value: 0, displayValue: this.textMarginsNormal, size: [20, 30, 20, 15]},
-                    { value: 1, displayValue: this.textMarginsUsNormal, size: [25.4, 25.4, 25.4, 25.4]},
+                    { value: 0, displayValue: this.textMarginsNormal, size: (/^(ca|us)$/i.test(Common.Utils.InternalSettings.get("pdfe-config-region"))) ? [25.4, 25.4, 25.4, 25.4] : [20, 30, 20, 15]},
                     { value: 2, displayValue: this.textMarginsNarrow, size: [12.7, 12.7, 12.7, 12.7]},
                     { value: 3, displayValue: this.textMarginsModerate, size: [25.4, 19.1, 25.4, 19.1]},
                     { value: 4, displayValue: this.textMarginsWide, size: [25.4, 50.8, 25.4, 50.8]},
@@ -2468,6 +2592,7 @@ define([
                 parentEl: $markup.findById('#print-prev-page'),
                 cls: 'btn-prev-page',
                 iconCls: 'arrow',
+                scaling: false,
                 dataHint: '2',
                 dataHintDirection: 'top'
             });
@@ -2476,6 +2601,7 @@ define([
                 parentEl: $markup.findById('#print-next-page'),
                 cls: 'btn-next-page',
                 iconCls: 'arrow',
+                scaling: false,
                 dataHint: '2',
                 dataHintDirection: 'top'
             });
@@ -2617,7 +2743,6 @@ define([
         txtPages: 'Pages',
         textMarginsLast: 'Last Custom',
         textMarginsNormal: 'Normal',
-        textMarginsUsNormal: 'US Normal',
         textMarginsNarrow: 'Narrow',
         textMarginsModerate: 'Moderate',
         textMarginsWide: 'Wide',

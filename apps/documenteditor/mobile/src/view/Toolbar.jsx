@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLeft, NavRight, Link } from 'framework7-react';
 import { Device } from '../../../../common/mobile/utils/device';
@@ -36,6 +36,15 @@ const ToolbarView = props => {
     const docTitle = props.docTitle;
     const isOpenModal = props.isOpenModal;
     
+    useEffect(() => {
+        if ( $$('.skl-container').length ) {
+            $$('.skl-container').remove();
+        }
+
+        return () => {
+        }
+    }, []);
+
     return (
         <Fragment>
             <NavLeft>
@@ -88,7 +97,7 @@ const ToolbarView = props => {
                     })
                 }
                 {!isEditableForms ? [
-                    ((isViewer || !Device.phone) && isAvailableExt && !props.disabledControls && !isVersionHistoryMode) && 
+                    ((isViewer || !Device.phone) && props.isMobileViewAvailable && !props.disabledControls && !isVersionHistoryMode) &&
                         <Link key='toggle-view-link' className={isOpenModal ? 'disabled' : ''} href={false} onClick={() => {
                             props.changeMobileView();
                             props.openOptions('snackbar');
@@ -129,27 +138,33 @@ const ToolbarView = props => {
                         <Link key='history-link' id='btn-open-history' href={false} className={isOpenModal && 'disabled'} onClick={() => props.openOptions('history')}>
                             <SvgIcon slot="media" symbolId={IconVersionHistory.id} className={'icon icon-svg'} />
                         </Link> 
-                    : null)
+                    : null),
+                    <Link key='btn-settings' className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'} id='btn-settings' icon='icon-settings' href={false} onClick={() => props.openOptions('settings')}></Link>
                 ] : [
-                    <Link key='prev-field-link' className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'} id='btn-prev-field' href={false} onClick={() => props.movePrevField()}>
-                        {Device.ios ?
-                            <SvgIcon slot="media" symbolId={IconPrevFieldForIos.id} className={'icon icon-svg'} /> :
-                            <SvgIcon slot="media" symbolId={IconPrevFieldForAndroid.id} className={'icon icon-svg'} />
-                        }
-                    </Link>,
-                    <Link key='next-field-link' className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'} id='btn-next-field' href={false} onClick={() => props.moveNextField()}>
-                        {Device.ios ?
-                            <SvgIcon slot="media" symbolId={IconNextFieldForIos.id} className={'icon icon-svg'} /> :
-                            <SvgIcon slot="media" symbolId={IconNextFieldForAndroid.id} className={'icon icon-svg'} />
-                        }
-                    </Link>,
-                    <Link key='save-form-link' className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'} id='btn-save-form' href={false} onClick={() => props.saveForm()}>
-                        <SvgIcon slot="media" symbolId={IconSaveForm.id} className={'icon icon-svg'} />
-                    </Link>,
+                    <Link key='prev-field-link' className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'} id='btn-prev-field' icon='icon-prev-field' href={false} onClick={() => props.movePrevField()}></Link>,
+                    <Link key='next-field-link' className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'} id='btn-next-field' icon='icon-next-field' href={false} onClick={() => props.moveNextField()}></Link>,
+                    (props.canSubmitForms ?
+                        [
+                            <Link key='btn-settings'
+                                  className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'}
+                                  icon='icon-settings' href={false}
+                                  id='btn-settings'
+                                  onClick={() => props.openOptions('settings')}></Link>,
+                            <Link key='send-form-link'
+                                  id='btn-submit-form'
+                                  className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'}
+                                  text={t("Toolbar.btnSend")} href={false}
+                                  onClick={() => props.saveForm()}></Link>
+                        ] : [
+                            <Link key='save-form-link'
+                                  className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'}
+                                  icon='icon-save-form' href={false} onClick={() => props.saveForm()}></Link>,
+                            <Link key='btn-settings'
+                                  className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'} id='btn-settings' icon='icon-settings'
+                                  href={false} onClick={() => {props.openOptions('settings')}}></Link>
+                        ]
+                    )
                 ]}
-                <Link className={(props.disabledSettings || props.disabledControls || isDisconnected || isOpenModal) && 'disabled'} id='btn-settings' href={false} onClick={() => props.openOptions('settings')}>
-                    <SvgIcon slot="media" symbolId={IconSettings.id} className={'icon icon-svg'} />
-                </Link>
             </NavRight>
         </Fragment>
     )
