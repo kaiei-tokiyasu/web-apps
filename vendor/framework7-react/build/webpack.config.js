@@ -188,7 +188,6 @@ const config = {
         ],
       },
       {
-<<<<<<< HEAD
         test: /\.(png|jpe?g|gif)(\?.*)?$/,
         loader: 'url-loader',
         options: {
@@ -196,19 +195,6 @@ const config = {
           name: 'images/[name].[ext]',
           outputPath: `../../../apps/${editor}/mobile/dist`,
         },
-=======
-        test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
-        use: [
-          {
-            loader: 'url-loader',
-            options: {
-              limit: 10000,
-              name: 'images/[name].[hash].[ext]',
-              outputPath: `../../../apps/${editor}/mobile/dist`,
-            },
-          }
-        ]
->>>>>>> release/v8.3.0
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
